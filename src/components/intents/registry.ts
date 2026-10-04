@@ -259,6 +259,7 @@ export const registry: Registry = {
     example: "bug checkout broken on safari @riya p1 by friday",
     icon: CircleDot,
     signals: ["issueType", "urgency"],
+    attachments: true,
     suggest: suggestIssue,
     // issueType is null offline (always "unspecified") or when Jev is unsure: plain "Issue".
     headerIcon: (s) => (s.issueType && s.issueType !== "unspecified" ? ISSUE_ICON[s.issueType] : CircleDot),

@@ -68,6 +68,11 @@ export const savedItems = {
   },
 };
 
+/** Ids in the persisted list, ignoring demo mode's in-memory list (used to sweep orphaned attachments). */
+export function persistedIds(): Set<number> {
+  return new Set(load().map((x) => x.id));
+}
+
 let last = 0;
 /** Unique, increasing ids that never collide with ones already saved. */
 export function newId() {

@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils";
 /** Lets a card write back into the main input — the text stays the source of truth. */
 export const DraftContext = createContext<{ append: (snippet: string) => void } | null>(null);
 
+/** The card's draft id (the saved item's id once saved), so a card can key its attachments. */
+export const ItemIdContext = createContext<number | null>(null);
+
 const placeholderClass =
   "inline-flex h-7 items-center gap-1 rounded-full border border-dashed border-line-strong px-2.5 text-[13px] font-medium whitespace-nowrap text-muted-foreground";
 

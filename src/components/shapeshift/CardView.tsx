@@ -2,6 +2,7 @@
 
 import { CornerDownLeft } from "lucide-react";
 import { AnimatePresence, motion, type MotionValue, useReducedMotion, useTransform } from "motion/react";
+import { HiddenAttachmentsNotice, WithAttachments } from "@/components/intents/Attachments";
 import { registry } from "@/components/intents/registry";
 import { IconSwap } from "@/components/intents/shared";
 import type { BadgeSpec } from "@/components/intents/types";
@@ -13,6 +14,11 @@ import { spring, tween } from "@/lib/motion";
 import type { ParsedMap } from "@/lib/parse";
 import type { GatedSignals } from "@/lib/signals";
 import { cn } from "@/lib/utils";
+
+/** Card types that show attached files ("issue"), named in the notice the other cards show. */
+const ATTACHMENT_CARDS = new Intl.ListFormat("en", { type: "disjunction" }).format(
+  Object.values(registry).flatMap((d) => (d.attachments ? [d.label.toLowerCase()] : [])),
+);
 
 type Props<K extends CardIntent> = {
   intent: K;
@@ -74,9 +80,16 @@ export function CardView<K extends CardIntent>({ intent, data, signals, readines
           exit={reduce ? { opacity: 0, transition: tween.exit } : { opacity: 0, scale: 0.98, filter: "blur(4px)", transition: tween.exit }}
           transition={reduce ? tween.fade : { ...spring.settle, delay: 0.04 }}
         >
-          <Body data={data} signals={signals} interactive={!ghost} />
+          {def.attachments ? (
+            <WithAttachments interactive={!ghost}>
+              <Body data={data} signals={signals} interactive={!ghost} />
+            </WithAttachments>
+          ) : (
+            <Body data={data} signals={signals} interactive={!ghost} />
+          )}
         </motion.div>
       </AnimatePresence>
+      {!def.attachments && <HiddenAttachmentsNotice showsOn={ATTACHMENT_CARDS} />}
 
       <motion.div layout="position" className="flex min-h-8 flex-wrap items-center justify-between gap-2">
         {ghost ? (

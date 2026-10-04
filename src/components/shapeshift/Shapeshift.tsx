@@ -12,7 +12,7 @@ import { spring, tween } from "@/lib/motion";
 import { parseFor, parsers } from "@/lib/parse";
 import { type GatedSignals, gateSignals, neutralGated } from "@/lib/signals";
 import { cn } from "@/lib/utils";
-import { DraftContext } from "@/components/intents/shared";
+import { DraftContext, ItemIdContext } from "@/components/intents/shared";
 import { CardView } from "./CardView";
 import { CyclingPlaceholder } from "./CyclingPlaceholder";
 import { DebugPanel } from "./DebugPanel";
@@ -333,7 +333,9 @@ export function Shapeshift() {
               >
                 <GhostPreview ghost={ghost}>
                   <DraftContext value={draft}>
-                    <IntentCard intent={intent} text={text} signals={gated} readiness={readiness} ghost={ghost} editing={editingId !== null} onConfirm={complete} />
+                    <ItemIdContext value={draftId}>
+                      <IntentCard intent={intent} text={text} signals={gated} readiness={readiness} ghost={ghost} editing={editingId !== null} onConfirm={complete} />
+                    </ItemIdContext>
                   </DraftContext>
                 </GhostPreview>
               </motion.div>

@@ -28,6 +28,8 @@ export type IntentDef<K extends CardIntent> = {
   edge?: (s: GatedSignals, d: ParsedMap[K]) => string | null;
   /** "Did you mean?" offers for values the parser won't set on its own (shown on committed cards). */
   suggest?: (text: string) => Suggestion[];
+  /** Shows attached files. Other cards warn that files exist but stay hidden. */
+  attachments?: boolean;
   /** One line for the recent stack. */
   summary: (d: ParsedMap[K]) => string;
   Component: ComponentType<CardProps<ParsedMap[K]>>;
