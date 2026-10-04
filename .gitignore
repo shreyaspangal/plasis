@@ -30,6 +30,13 @@ CLAUDE.md
 plans/
 animation-plans/
 
+# ── Personal planning docs (local only; upstream's docs/ assets stay tracked) ─
+docs/BRIEF.md
+docs/PLAN.md
+docs/ROUTING.md
+docs/BLOG_NOTES.md
+docs/FINDINGS.md
+
 # ── Editors & OS ─────────────────────────────────────────────
 .DS_Store
 Thumbs.db
