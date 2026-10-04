@@ -29,6 +29,8 @@ export const questions = {
     timezone: "Converting a time of day between time zones or cities, or asking the time somewhere",
     random: "Asking for a random result: rolling dice, flipping a coin, a random number or letting chance pick",
     goal: "Tracking progress toward a numeric target, such as 4 of 12 books read or money saved",
+    issue:
+      "Logging a bug, feature request or piece of project work for a team, often with an @name, priority or deadline, rather than a personal reminder",
     note: "Writing a thought, idea or note that is none of the above",
     none: "Too short, unclear or unfinished to tell yet",
   }),
@@ -94,6 +96,12 @@ export const questions = {
     focus: "A focus or deep-work session",
     break: "A rest or break",
     stopwatch: "Counting up with no end time",
+  }),
+  issueType: choice("What kind of project work item this is", {
+    bug: "Something broken, failing or not working as expected",
+    story: "A new feature or change users will see, often phrased as what a user wants",
+    task: "Other project work that is neither a bug nor a new feature, such as setup, docs or cleanup",
+    unspecified: "Not clear or not a work item",
   }),
   hasExplicitOptions: noul("The text names two or more explicit options to pick between"),
   isShoppingList: noul("The listed items are things to buy"),

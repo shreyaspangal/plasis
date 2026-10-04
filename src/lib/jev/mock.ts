@@ -1,5 +1,6 @@
 import { completenessFor } from "@/lib/parse";
 import { REFERENCE_RE } from "@/lib/parse/color";
+import { hasExplicitPriority, hasMention } from "@/lib/parse/issue";
 import { ZONES } from "@/lib/parse/timezone";
 import {
   type Answer,
@@ -10,6 +11,7 @@ import {
   EXPENSE_CATEGORIES,
   INTENT_KEYS,
   type IntentKey,
+  ISSUE_TYPES,
   type IntentResult,
   noneResult,
   TIMER_KINDS,
@@ -19,7 +21,7 @@ import {
 } from "./types";
 
 /** Keep in sync with questions.ts (asserted in tests). */
-export const MOCK_QUESTION_COUNT = 14;
+export const MOCK_QUESTION_COUNT = 15;
 export const MOCK_MODEL = "jev-offline";
 
 const has = (re: RegExp, t: string) => re.test(t);
@@ -29,6 +31,13 @@ const GATHER = /\b(dinner|lunch|breakfast|brunch|coffee|meeting|meet|call|sync|s
 const UNIT = "(km|kms|kilomet(er|re)s?|mi|miles?|m|met(er|re)s?|cm|mm|ft|feet|foot|in|inch(es)?|yd|yards?|kg|kgs|kilos?|g|grams?|lbs?|pounds?|oz|ounces?|l|lit(er|re)s?|ml|gal(lons?)?|cups?|°?c|°?f|celsius|fahrenheit|kelvin|mph|kph|km/h)";
 const CONVERT_FULL = new RegExp(`\\d\\s*${UNIT}\\s+(to|in|into|as)\\s+${UNIT}\\b`);
 const CONVERT_PART = new RegExp(`\\d\\s*${UNIT}\\b`);
+const BUG_WORDS = /\b(bug|broken|crash(es|ed|ing)?|errors?|fails?|failing|failed|not working|doesn'?t work|regression|outage|timeout|timed out|404|500)\b/;
+const STORY_WORDS = /\b(story|feature( request)?|users? (can(?!'?t)|should|want)|as an? \w+,? i want)\b/;
+/** Bug-ish only next to a product word: "search is slow" yes, "slow morning" no. */
+const SOFT_BUG_WORDS = /\b(does nothing|doesn'?t (load|open|save)|won'?t (load|open|save)|not loading|typo|slow|can'?t|cannot)\b/;
+const TASK_WORDS = /\b(task|refactor|clean ?up|docs|readme|set ?up|migrate|migration|bump|chore|upgrade)\b/;
+const PRODUCT_WORDS = /\b(login|signup|checkout|api|endpoint|page|button|modal|form|safari|chrome|firefox|ios|android|prod|staging|deploy|build|ci|pr|repo|server|database|db|dashboard|search|upload|pricing|signup)\b/;
+const SOFT_BUG_NEAR_PRODUCT = new RegExp(`${SOFT_BUG_WORDS.source}.*${PRODUCT_WORDS.source}|${PRODUCT_WORDS.source}.*${SOFT_BUG_WORDS.source}`);
 const COLOR_WORDS = /\b(red|crimson|scarlet|maroon|burgundy|pink|rose|coral|salmon|peach|orange|tangerine|amber|gold|yellow|mustard|lemon|cream|beige|sand|tan|brown|chocolate|olive|lime|green|sage|mint|emerald|forest|teal|turquoise|cyan|sky|blue|navy|cobalt|indigo|violet|purple|lavender|lilac|magenta|plum|grey|gray|slate|charcoal|black|white|ivory)(ish)?\b/;
 
 /** "minecraft diamond", "tiffany blue", "ruby": specific references that only mean a color. */
@@ -96,6 +105,18 @@ function intentScores(raw: string): Scores {
   if (has(DATE_WORDS, t)) add("event", gather || words.length <= 6 ? 2.5 : 1);
   if (gather) add("event", 3);
   if (has(/\b(on|over|via) (zoom|meet|teams|facetime)\b/, t)) add("event", 2);
+  // Issue: one piece of project work for a team. "@name" never matches an email (see parse/issue).
+  if (hasMention(t)) add("issue", 4);
+  if (hasExplicitPriority(t)) add("issue", 4);
+  if (has(/^(bug|story|task|feature)\b/, t)) add("issue", 5);
+  if (has(BUG_WORDS, t)) add("issue", 3);
+  if (has(STORY_WORDS, t) || has(/\bissue with\b/, t)) add("issue", 3);
+  if (has(/^(fix|implement|refactor|investigate|debug|migrate)\b/, t)) add("issue", 3);
+  if (has(PRODUCT_WORDS, t)) {
+    add("issue", 1.5);
+    if (has(SOFT_BUG_WORDS, t)) add("issue", 3);
+    if (has(/^add\b/, t)) add("issue", 3);
+  }
   if (has(/\b(i think|i feel|felt|feeling|thinking|wonder|realized|idea|thought|maybe we)\b/, t)) add("note", 2);
   if (words.length >= 8) add("note", 3);
   else if (words.length >= 5) add("note", 2.2);
@@ -129,6 +150,14 @@ function intentScores(raw: string): Scores {
     s.convert = Math.min(s.convert ?? 0, 1);
   }
   if ((s.goal ?? 0) >= 4.5) s.calc = Math.min(s.calc ?? 0, 1);
+  // Issue is one item, "rather than a personal reminder".
+  if ((s.reminder ?? 0) >= 6 || listSeps >= 2) s.issue = Math.min(s.issue ?? 0, 2);
+  // One word ("fix", "@riya", "asap") is too little to call it a work item.
+  if (words.length <= 1) s.issue = Math.min(s.issue ?? 0, 1);
+  if ((s.issue ?? 0) >= 5) {
+    s.event = Math.min(s.event ?? 0, 2);
+    s.note = Math.min(s.note ?? 0, 2);
+  }
   return s;
 }
 
@@ -215,6 +244,18 @@ export function mockClassify(text: string): IntentResult {
         [/\b(break|rest|nap|breather)\b/, "break"],
         [/\b(stopwatch|count up)\b/, "stopwatch"],
       ], "countdown"),
+      issueType: choose(ISSUE_TYPES, t, [
+        [/^bug\b/, "bug"],
+        [/^story\b/, "story"],
+        [/^task\b/, "task"],
+        [/^fix\b/, "bug"],
+        [BUG_WORDS, "bug"],
+        [/\bissue with\b/, "bug"],
+        [SOFT_BUG_NEAR_PRODUCT, "bug"],
+        [/^add\b/, "story"],
+        [STORY_WORDS, "story"],
+        [TASK_WORDS, "task"],
+      ], "unspecified"),
       hasExplicitOptions: /\b\w+\s+(or|vs)\s+\w+/.test(t) ? 0.9 : 0.05,
       isShoppingList: /\b(buy|get|groceries|shopping|milk|eggs|bread|coffee|pick up|order)\b/.test(t) ? 0.88 : 0.1,
     },

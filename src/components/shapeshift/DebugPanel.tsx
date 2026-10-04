@@ -60,6 +60,7 @@ export function DebugPanel({ result, mem, gated }: { result: IntentResult; mem: 
       <Dist name="expenseCategory" a={s.expenseCategory} />
       <Dist name="colorMood" a={s.colorMood} />
       <Dist name="timerKind" a={s.timerKind} />
+      <Dist name="issueType" a={s.issueType} />
     </aside>
   );
 }

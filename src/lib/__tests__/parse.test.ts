@@ -7,6 +7,7 @@ import { parseHabit } from "@/lib/parse/habit";
 import { parseColor } from "@/lib/parse/color";
 import { parseSplit } from "@/lib/parse/split";
 import { parseExpense } from "@/lib/parse/expense";
+import { parseIssue } from "@/lib/parse/issue";
 import { parseConvert } from "@/lib/parse/convert";
 import { evaluate, parseCalc } from "@/lib/parse/calc";
 import { parseTravel } from "@/lib/parse/travel";
@@ -329,6 +330,90 @@ describe("misspelled tomorrow (shared findDate)", () => {
   });
   test("words that only look similar are not dates", () => {
     expect(parseReminder("remind me to buy tomatoes", REF).when).toBeNull();
+  });
+});
+
+describe("issue", () => {
+  test("full sentence: peels date, mentions, priority and type word", () => {
+    const i = parseIssue("bug checkout broken on safari @riya cc @sam high priority by friday", REF);
+    expect(i.summary).toBe("Checkout broken on safari");
+    expect(i.assignee).toBe("Riya");
+    expect(i.collaborators).toEqual(["Sam"]);
+    expect(i.priority).toBe("high");
+    expect(i.due?.getDay()).toBe(5);
+    expect(i.hasTime).toBe(false);
+  });
+  test("an email address is not a mention", () => {
+    const i = parseIssue("email riya@acme.com about the api", REF);
+    expect(i.assignee).toBeNull();
+    expect(i.summary).toBe("Email riya@acme.com about the api");
+  });
+  test("p1 is a priority and 1pm is a time", () => {
+    const i = parseIssue("p1 typo in footer today at 1pm", REF);
+    expect(i.priority).toBe("high");
+    expect(i.due?.getHours()).toBe(13);
+    expect(i.summary).toBe("Typo in footer");
+  });
+  test.each([
+    ["p0 crash", "high"],
+    ["p2 crash", "medium"],
+    ["p4 crash", "low"],
+    ["priority: low crash", "low"],
+    ["crash normal priority", "medium"],
+    ["urgent crash", "high"],
+  ] as const)("explicit priority: %s", (text, level) => {
+    const i = parseIssue(text, REF);
+    expect(i.priority).toBe(level);
+    expect(i.summary).toBe("Crash");
+  });
+  test("a bare high is not a priority", () => {
+    const i = parseIssue("memory usage high on server", REF);
+    expect(i.priority).toBeNull();
+    expect(i.summary).toBe("Memory usage high on server");
+  });
+  test.each([
+    ["login broken since monday", "Login broken since monday"],
+    ["login broken from monday", "Login broken from monday"],
+    ["code freeze from monday to friday", "Code freeze from monday to friday"],
+    ["crash after monday deploy", "Crash after monday deploy"],
+    ["errors from yesterday's deploy", "Errors from yesterday's deploy"],
+    ["checkout crashed yesterday", "Checkout crashed yesterday"],
+  ])("not a due date: %s", (text, summary) => {
+    const i = parseIssue(text, REF);
+    expect(i.due).toBeNull();
+    expect(i.summary).toBe(summary);
+  });
+  test("today still counts as due, even after chrono's noon", () => {
+    const evening = new Date(2026, 8, 22, 18, 0);
+    expect(parseIssue("ship hotfix today", evening).due?.getDate()).toBe(22);
+  });
+  test("from elsewhere in the sentence doesn't block a due date", () => {
+    expect(parseIssue("move from staging to prod by friday", REF).due?.getDay()).toBe(5);
+  });
+  test("cc only: collaborators but no assignee", () => {
+    const i = parseIssue("update readme cc @sam @jo", REF);
+    expect(i.assignee).toBeNull();
+    expect(i.collaborators).toEqual(["Sam", "Jo"]);
+  });
+  test("two mentions before cc: first assigns, the rest collaborate, no duplicates", () => {
+    const i = parseIssue("fix login @riya @sam cc @riya", REF);
+    expect(i.assignee).toBe("Riya");
+    expect(i.collaborators).toEqual(["Sam"]);
+  });
+  test("your sentence: typo'd date, connectors peeled with date and priority", () => {
+    const i = parseIssue("chekout broken on safari @sharon and fix it by tommorow as its high priority", REF);
+    expect(i.due?.getDate()).toBe(23);
+    expect(i.priority).toBe("high");
+    expect(i.assignee).toBe("Sharon");
+    expect(i.summary).toBe("Chekout broken on safari and fix it");
+  });
+  test.each([
+    ["fix login by friday asap", "Fix login"],
+    ["as it's high priority, fix checkout today", "Fix checkout"],
+    ["update readme due by monday", "Update readme"],
+  ])("no connector leaks: %s", (text, summary) => expect(parseIssue(text, REF).summary).toBe(summary));
+  test("type word with a colon is stripped", () => {
+    expect(parseIssue("story: users can export reports as pdf", REF).summary).toBe("Users can export reports as pdf");
   });
 });
 

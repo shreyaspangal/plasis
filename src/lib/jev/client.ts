@@ -65,6 +65,7 @@ export async function classifyWithJev(text: string, signal?: AbortSignal): Promi
       expenseCategory: answer(a.expenseCategory),
       colorMood: answer(a.colorMood),
       timerKind: answer(a.timerKind),
+      issueType: answer(a.issueType),
       hasExplicitOptions: a.hasExplicitOptions.noul,
       isShoppingList: a.isShoppingList.noul,
     },

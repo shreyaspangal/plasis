@@ -4,6 +4,7 @@ import type {
   EventMode,
   ExpenseCategory,
   IntentResult,
+  IssueType,
   SignalKey,
   Signals,
   TimerKind,
@@ -29,6 +30,7 @@ export type GatedSignals = {
   expenseCategory: ExpenseCategory | null;
   colorMood: ColorMood | null;
   timerKind: TimerKind | null;
+  issueType: IssueType | null;
   tone: Tone | null;
   recurring: boolean;
   isQuestion: boolean;
@@ -47,6 +49,7 @@ export const neutralGated: GatedSignals = {
   expenseCategory: null,
   colorMood: null,
   timerKind: null,
+  issueType: null,
   tone: null,
   recurring: false,
   isQuestion: false,
@@ -71,9 +74,9 @@ function gateNoul(p: number, prev: boolean): boolean {
   return prev;
 }
 
-type ChoiceKey = "eventMode" | "transport" | "tripType" | "expenseCategory" | "colorMood" | "timerKind" | "tone";
+type ChoiceKey = "eventMode" | "transport" | "tripType" | "expenseCategory" | "colorMood" | "timerKind" | "issueType" | "tone";
 type NoulKey = "recurring" | "isQuestion" | "hasExplicitOptions" | "isShoppingList";
-const CHOICE_KEYS: ChoiceKey[] = ["eventMode", "transport", "tripType", "expenseCategory", "colorMood", "timerKind", "tone"];
+const CHOICE_KEYS: ChoiceKey[] = ["eventMode", "transport", "tripType", "expenseCategory", "colorMood", "timerKind", "issueType", "tone"];
 const NOUL_KEYS: NoulKey[] = ["recurring", "isQuestion", "hasExplicitOptions", "isShoppingList"];
 
 /**

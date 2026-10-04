@@ -18,6 +18,7 @@ import { completeCountdown, parseCountdown, type CountdownData } from "./countdo
 import { completeTimezone, parseTimezone, type TimezoneData } from "./timezone";
 import { completeRandom, parseRandom, type RandomData } from "./random";
 import { completeGoal, parseGoal, type GoalData } from "./goal";
+import { completeIssue, parseIssue, type IssueData } from "./issue";
 
 export type ParsedMap = {
   event: EventData;
@@ -38,6 +39,7 @@ export type ParsedMap = {
   timezone: TimezoneData;
   random: RandomData;
   goal: GoalData;
+  issue: IssueData;
   note: NoteData;
 };
 
@@ -67,6 +69,7 @@ export const parsers: { [K in CardIntent]: Parser<K> } = {
   timezone: { parse: (t, c) => parseTimezone(t, c.ref), complete: completeTimezone },
   random: { parse: (t) => parseRandom(t), complete: completeRandom },
   goal: { parse: (t) => parseGoal(t), complete: completeGoal },
+  issue: { parse: (t, c) => parseIssue(t, c.ref), complete: completeIssue },
   note: { parse: (t) => parseNote(t), complete: completeNote },
 };
 

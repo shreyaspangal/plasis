@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mockClassify, MOCK_QUESTION_COUNT } from "@/lib/jev/mock";
 import { QUESTION_COUNT } from "@/lib/jev/questions";
 import { rawState } from "@/lib/decide";
-import { intentResultSchema } from "@/lib/jev/types";
+import { INTENT_KEYS, intentResultSchema } from "@/lib/jev/types";
 
 const EXAMPLES: [string, string][] = [
   ["dinner with priya friday 8pm", "event"],
@@ -38,8 +38,17 @@ const EXAMPLES: [string, string][] = [
   ["random number 1-100", "random"],
   ["read 12 books this year, 4 done", "goal"],
   ["4 of 10 workouts", "goal"],
+  ["bug checkout broken on safari @riya p1 by friday", "issue"],
+  ["checkout broken on safari high priority @sara", "issue"],
+  ["fix login redirect loop", "issue"],
+  ["story: users can export reports as pdf", "issue"],
+  ["i have an issue with the login page", "issue"],
+  ["update the readme cc @sam", "issue"],
   ["cab to client site 640 billable", "expense"],
   ["lunch with client 1200 reimbursable", "expense"],
+  ["typo on the pricing page", "issue"],
+  ["signup button does nothing on android", "issue"],
+  ["add dark mode to the dashboard", "issue"],
 ];
 
 describe("mock classifier", () => {
@@ -52,6 +61,29 @@ describe("mock classifier", () => {
       expect(rawState(r)).toEqual({ kind: "committed", intent } as never);
     });
   }
+  // Guards F-003: a card with no offline rules compiles and passes every other test.
+  test("every card type has an offline example", () => {
+    const covered = new Set(EXAMPLES.map(([, intent]) => intent));
+    expect(INTENT_KEYS.filter((k) => k !== "none" && !covered.has(k))).toEqual([]);
+  });
+  test.each([
+    ["remind me to fix checkout friday", "reminder"],
+    ["fix checkout, update readme, deploy", "todo"],
+  ])("issue boundary: %s → %s", (text, intent) => expect(mockClassify(text).intent.value).toBe(intent as never));
+  test.each(["fix", "@riya", "asap", "slow morning today"])("not an issue: %s", (text) =>
+    expect(mockClassify(text).intent.value).not.toBe("issue"),
+  );
+  test("an email address is not an issue mention", () => expect(mockClassify("email riya@acme.com about the api").intent.value).not.toBe("issue"));
+  test.each([
+    ["bug checkout broken on safari", "bug"],
+    ["fix login redirect loop", "bug"],
+    ["story: users can export reports as pdf", "story"],
+    ["update the readme cc @sam", "task"],
+    ["look into the checkout thing @sam", "unspecified"],
+    ["typo on the pricing page", "bug"],
+    ["add csv export for invoices @neha p2", "story"],
+    ["users can't upload files over 5mb", "bug"],
+  ])("issueType: %s → %s", (text, type) => expect(mockClassify(text).signals.issueType.value).toBe(type as never));
   test("short text → none", () => expect(mockClassify("a").intent.value).toBe("none"));
   test("on zoom → video_call", () => expect(mockClassify("dinner with priya friday 8pm on zoom").signals.eventMode.value).toBe("video_call"));
   test("urgent → high urgency", () => expect(mockClassify("remind me to pay rent tomorrow urgent").signals.urgency.score).toBeGreaterThan(1.2));

@@ -19,6 +19,7 @@ export const INTENT_KEYS = [
   "timezone",
   "random",
   "goal",
+  "issue",
   "note",
   "none",
 ] as const;
@@ -40,6 +41,7 @@ export const EXPENSE_CATEGORIES = [
 ] as const;
 export const COLOR_MOODS = ["warm", "cool", "neutral", "vivid", "pastel", "dark"] as const;
 export const TIMER_KINDS = ["countdown", "focus", "break", "stopwatch"] as const;
+export const ISSUE_TYPES = ["bug", "story", "task", "unspecified"] as const;
 
 export type Tone = (typeof TONES)[number];
 export type EventMode = (typeof EVENT_MODES)[number];
@@ -48,6 +50,7 @@ export type TripType = (typeof TRIP_TYPES)[number];
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 export type ColorMood = (typeof COLOR_MOODS)[number];
 export type TimerKind = (typeof TIMER_KINDS)[number];
+export type IssueType = (typeof ISSUE_TYPES)[number];
 
 function answerSchema<const T extends readonly [string, ...string[]]>(values: T) {
   const e = z.enum(values);
@@ -75,6 +78,7 @@ export const signalsSchema = z.object({
   expenseCategory: answerSchema(EXPENSE_CATEGORIES),
   colorMood: answerSchema(COLOR_MOODS),
   timerKind: answerSchema(TIMER_KINDS),
+  issueType: answerSchema(ISSUE_TYPES),
   hasExplicitOptions: z.number(),
   isShoppingList: z.number(),
 });
@@ -112,6 +116,7 @@ export function neutralSignals(): Signals {
     expenseCategory: neutralAnswer("other"),
     colorMood: neutralAnswer("neutral"),
     timerKind: neutralAnswer("countdown"),
+    issueType: neutralAnswer("unspecified"),
     hasExplicitOptions: 0,
     isShoppingList: 0,
   };

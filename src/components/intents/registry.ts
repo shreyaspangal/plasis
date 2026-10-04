@@ -5,10 +5,13 @@ import {
   Globe,
   Target,
   Bell,
+  BookOpen,
+  Bug,
   Briefcase,
   CalendarDays,
   Calculator,
   CircleAlert,
+  CircleDot,
   Coffee,
   Contact,
   Focus,
@@ -18,6 +21,7 @@ import {
   Repeat,
   Ruler,
   ShoppingCart,
+  SquareCheck,
   StickyNote,
   Sun,
   Timer,
@@ -43,6 +47,7 @@ import { ConvertCard } from "./ConvertCard";
 import { EventCard } from "./EventCard";
 import { ExpenseRow } from "./ExpenseRow";
 import { HabitCard } from "./HabitCard";
+import { IssueCard } from "./IssueCard";
 import { CATEGORY_ICON, TRANSPORT_ICON } from "./icons";
 import { LinkCard } from "./LinkCard";
 import { NoteCard } from "./NoteCard";
@@ -65,6 +70,9 @@ const TONE_LABEL = {
   stressed: "Stressed note",
   reflective: "Reflective note",
 } as const;
+
+const ISSUE_ICON = { bug: Bug, story: BookOpen, task: SquareCheck } as const;
+const ISSUE_LABEL = { bug: "Bug", story: "Story", task: "Task" } as const;
 
 const TONE_EDGE = {
   neutral: null,
@@ -244,6 +252,17 @@ export const registry: Registry = {
     signals: [],
     summary: (d) => (d.target ? `${d.title || "Goal"} · ${d.current}/${d.target}${d.unit ? ` ${d.unit}` : ""}` : d.title || "Goal"),
     Component: GoalCard,
+  },
+  issue: {
+    label: "Issue",
+    example: "bug checkout broken on safari @riya p1 by friday",
+    icon: CircleDot,
+    signals: ["issueType", "urgency"],
+    // issueType is null offline (always "unspecified") or when Jev is unsure: plain "Issue".
+    headerIcon: (s) => (s.issueType && s.issueType !== "unspecified" ? ISSUE_ICON[s.issueType] : CircleDot),
+    headerLabel: (s) => (s.issueType && s.issueType !== "unspecified" ? ISSUE_LABEL[s.issueType] : "Issue"),
+    summary: (d) => [d.summary || "Issue", d.assignee, d.due && formatWhen(d.due, d.hasTime).day].filter(Boolean).join(" · "),
+    Component: IssueCard,
   },
   note: {
     label: "Note",
