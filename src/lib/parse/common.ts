@@ -60,8 +60,22 @@ export type DateHit = {
   index: number;
 };
 
+/** Misspellings of "tomorrow" chrono doesn't know ("tommorow", "tomorow", "2moro"). The real word is left to chrono. */
+const TOMORROW_TYPO = /\b(?!tomorrow\b)(?:tom+or+ow|2mor+ow?)\b/i;
+
+// A custom parser reports its own index and text, so callers can still cut the date out cleanly.
+const dates = chrono.casual.clone();
+dates.parsers.push({
+  pattern: () => TOMORROW_TYPO,
+  extract: (context) => {
+    const d = new Date(context.refDate);
+    d.setDate(d.getDate() + 1);
+    return context.createParsingComponents({ day: d.getDate(), month: d.getMonth() + 1, year: d.getFullYear() }).imply("hour", 12);
+  },
+});
+
 export function findDate(text: string, ref: Date = new Date()): DateHit | null {
-  const results = chrono.parse(text, ref, { forwardDate: true });
+  const results = dates.parse(text, ref, { forwardDate: true });
   if (!results.length) return null;
   const r = results[0];
   // chrono is happy to read a bare number as a date; require something date-like.

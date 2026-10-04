@@ -38,6 +38,8 @@ const EXAMPLES: [string, string][] = [
   ["random number 1-100", "random"],
   ["read 12 books this year, 4 done", "goal"],
   ["4 of 10 workouts", "goal"],
+  ["cab to client site 640 billable", "expense"],
+  ["lunch with client 1200 reimbursable", "expense"],
 ];
 
 describe("mock classifier", () => {

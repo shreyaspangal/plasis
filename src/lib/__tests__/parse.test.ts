@@ -319,3 +319,25 @@ describe("goal", () => {
   test("money with k", () => expect(parseGoal("save 50k for a trip, saved 12k")).toMatchObject({ current: 12000, target: 50000 }));
   test("no target", () => expect(parseGoal("learn piano").target).toBeNull());
 });
+
+describe("misspelled tomorrow (shared findDate)", () => {
+  test.each(["tommorow", "tomorow", "tommorrow", "2moro"])("%s", (w) => {
+    const r = parseReminder(`remind me to call mom ${w}`, REF);
+    expect(r.when?.getDate()).toBe(23);
+    expect(r.task).toBe("Call mom");
+    expect(parseEvent(`dinner with priya ${w} 8pm`, REF).date?.getDate()).toBe(23);
+  });
+  test("words that only look similar are not dates", () => {
+    expect(parseReminder("remind me to buy tomatoes", REF).when).toBeNull();
+  });
+});
+
+describe("expense: billing words aren't part of the item (F-001)", () => {
+  test.each([
+    ["cab to client site 640 billable", "Cab to client site"],
+    ["billable cab to client site 640", "Cab to client site"],
+    ["640 cab non-billable", "Cab"],
+    ["lunch with client 1200 reimbursable", "Lunch with client"],
+    ["paid 300 for parking, billable to acme", "Parking"],
+  ])("%s → %s", (text, item) => expect(parseExpense(text).item).toBe(item));
+});

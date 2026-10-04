@@ -59,7 +59,7 @@ function intentScores(raw: string): Scores {
   if (has(/\b(remind|reminder|don'?t forget|remember to)\b/, t)) add("reminder", 6);
   if (has(/\b(split|divide|share)\b/, t)) add("split", num ? 5 : 3);
   if (has(/\b(between|among)\s+(\d+|two|three|four|five|six)\b/, t) && num) add("split", 2);
-  if (has(/\b(spent|paid|bought|cost|expense)\b/, t)) add("expense", num ? 5 : 3);
+  if (has(/\b(spent|paid|bought|cost|expense|(non-?)?billable|reimburs(able|ed|e))\b/, t)) add("expense", num ? 5 : 3);
   if (has(/^(₹|rs\.?|\$)\s?\d/, t)) add("expense", 2);
   if (has(CONVERT_FULL, t)) add("convert", 7);
   else if (has(CONVERT_PART, t) && !has(/\b(min|mins|minutes?|hours?|hrs?|sec|secs?)\b/, t) && words.length <= 3) add("convert", 2);

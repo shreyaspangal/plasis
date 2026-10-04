@@ -8,6 +8,8 @@ export function parseExpense(text: string): ExpenseData {
   const on = rest.match(/\b(?:on|for|at|in)\s+(.+)$/i);
   let item = on ? on[1] : rest;
   item = item.replace(/\b(?:spent|paid|pay|bought|cost|costs|rupees|rs|bucks|dollars|today|yesterday)\b/gi, " ");
+  // Who pays is a billing flag, not part of what was bought ("cab 640 billable to acme" → "Cab").
+  item = item.replace(/\b(?:non-?)?billable(?:\s+to\s+\w+)?\b|\breimburs(?:able|ed|e)\b/gi, " ");
   return { amount: amount?.value ?? null, item: capitalize(tidy(item)), currency: detectCurrency(text) };
 }
 
