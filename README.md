@@ -48,7 +48,8 @@ Restart `bun dev`. The latency readout in the bottom-right corner switches from 
 | Variable | Default | What it does |
 | --- | --- | --- |
 | `TYPESAFE_API_KEY` | _(empty)_ | Enables the online model. Empty or placeholder values keep you offline. |
-| `JEV_MODEL` | `jev-1.13.0` | Pinned model version. |
+| `AI_GATEWAY_API_KEY` | _(empty)_ | Reaches Jev through Vercel AI Gateway instead (needs purchased gateway credits). `TYPESAFE_API_KEY` wins if both are set. |
+| `JEV_MODEL` | `jev-1.13.0` | Pinned model version (TypeSafe route only). |
 | `NEXT_PUBLIC_USE_MOCK` | `false` | `true` forces offline even with a key. |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | Used for Open Graph metadata. |
 

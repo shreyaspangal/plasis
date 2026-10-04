@@ -13,13 +13,34 @@ export function looksLikeKey(key: string | undefined): key is string {
 }
 
 /**
+ * Where Jev is reached: TypeSafe directly, or Vercel AI Gateway's TypeSafe-compatible API
+ * (https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe). A TypeSafe key wins if both are set.
+ */
+function jevRoute(): { apiKey: string; baseURL?: string; model: string; via: string } | null {
+  if (looksLikeKey(process.env.TYPESAFE_API_KEY)) {
+    return { apiKey: process.env.TYPESAFE_API_KEY, model: process.env.JEV_MODEL || "jev-latest", via: "TypeSafe" };
+  }
+  if (looksLikeKey(process.env.AI_GATEWAY_API_KEY)) {
+    return {
+      apiKey: process.env.AI_GATEWAY_API_KEY,
+      baseURL: "https://ai-gateway.vercel.sh/typesafe",
+      // JEV_MODEL names a TypeSafe version (jev-1.13.0); the gateway only knows its own id (F-028).
+      model: "typesafe-ai/jev",
+      via: "AI Gateway",
+    };
+  }
+  return null;
+}
+
+/**
  * Offline by default. The online Jev model is used only when a real API key is set,
  * and NEXT_PUBLIC_USE_MOCK=true can still force offline for UI work and demos.
  */
 export function classifierMode(): { mode: "online" | "offline"; reason: string } {
   if (process.env.NEXT_PUBLIC_USE_MOCK === "true") return { mode: "offline", reason: "NEXT_PUBLIC_USE_MOCK=true" };
-  if (!looksLikeKey(process.env.TYPESAFE_API_KEY)) return { mode: "offline", reason: "no TYPESAFE_API_KEY set" };
-  return { mode: "online", reason: `using ${process.env.JEV_MODEL || "jev-latest"}` };
+  const route = jevRoute();
+  if (!route) return { mode: "offline", reason: "no TYPESAFE_API_KEY or AI_GATEWAY_API_KEY set" };
+  return { mode: "online", reason: `using ${route.model} via ${route.via}` };
 }
 
 export function warnMockOnce(reason: string) {
@@ -30,8 +51,11 @@ export function warnMockOnce(reason: string) {
 
 function getClient() {
   if (!client) {
+    const route = jevRoute();
     client = new TypeSafeClient({
-      defaultModel: process.env.JEV_MODEL || "jev-latest",
+      apiKey: route?.apiKey,
+      baseURL: route?.baseURL,
+      defaultModel: route?.model ?? "jev-latest",
       // One fast attempt: a stale answer is worse than falling back to the mock.
       retry: { maxRetries: 0 },
       timeout: 2500,
