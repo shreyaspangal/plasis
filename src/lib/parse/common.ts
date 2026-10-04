@@ -104,3 +104,13 @@ export function formatAmount(n: number, currency: Currency = DEFAULT_CURRENCY) {
     })
   );
 }
+
+/**
+ * A value the parser noticed but won't set on its own. Accepting rewrites the text
+ * (the text stays the source of truth), so the parser then reads it for certain.
+ */
+export type Suggestion = { id: string; start: number; end: number; from: string; to: string };
+
+export function applySuggestion(text: string, s: Suggestion): string {
+  return text.slice(0, s.start) + s.to + text.slice(s.end);
+}

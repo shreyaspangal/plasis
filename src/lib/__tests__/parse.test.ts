@@ -7,7 +7,8 @@ import { parseHabit } from "@/lib/parse/habit";
 import { parseColor } from "@/lib/parse/color";
 import { parseSplit } from "@/lib/parse/split";
 import { parseExpense } from "@/lib/parse/expense";
-import { parseIssue } from "@/lib/parse/issue";
+import { parseIssue, suggestIssue } from "@/lib/parse/issue";
+import { applySuggestion } from "@/lib/parse/common";
 import { parseConvert } from "@/lib/parse/convert";
 import { evaluate, parseCalc } from "@/lib/parse/calc";
 import { parseTravel } from "@/lib/parse/travel";
@@ -414,6 +415,28 @@ describe("issue", () => {
   ])("no connector leaks: %s", (text, summary) => expect(parseIssue(text, REF).summary).toBe(summary));
   test("type word with a colon is stripped", () => {
     expect(parseIssue("story: users can export reports as pdf", REF).summary).toBe("Users can export reports as pdf");
+  });
+});
+
+describe("issue suggestions (Did you mean?)", () => {
+  const offer = (t: string) => suggestIssue(t).map((x) => `${t.slice(x.start, x.end)}→${x.to}`);
+  test("a trailing bare priority word", () => expect(offer("checkout broken on safari @riya high")).toEqual(["high→high priority"]));
+  test.each(["memory usage high on server", "crash on login high priority", "priority high", "crash p1 high"])("no nag: %s", (t) =>
+    expect(offer(t)).toEqual([]),
+  );
+  test("a name without @ after assign", () => expect(offer("fix login, assign to riya")).toEqual(["riya→@riya"]));
+  test("pronouns are not names", () => expect(offer("assign it to me")).toEqual([]));
+  test.each([
+    ["fix login, assign to @riya", []],
+    ["fix login assigned to @riya high", ["high→high priority"]],
+  ])("already a mention, so no name offer (F-026): %s", (t, expected) => expect(offer(t)).toEqual(expected));
+  test("accepting rewrites the text and the parser then reads it for certain", () => {
+    const t = "fix login, assign to riya high";
+    let text = t;
+    for (const s of suggestIssue(t).reverse()) text = applySuggestion(text, s); // right to left keeps earlier positions valid
+    const i = parseIssue(text, REF);
+    expect(text).toBe("fix login, assign to @riya high priority");
+    expect(i).toMatchObject({ summary: "Fix login", assignee: "Riya", priority: "high" });
   });
 });
 

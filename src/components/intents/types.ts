@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ComponentType } from "react";
 import type { CardIntent, SignalKey } from "@/lib/jev/types";
 import type { ParsedMap } from "@/lib/parse";
+import type { Suggestion } from "@/lib/parse/common";
 import type { GatedSignals } from "@/lib/signals";
 
 export type CardProps<D> = {
@@ -25,6 +26,8 @@ export type IntentDef<K extends CardIntent> = {
   badges?: (s: GatedSignals, d: ParsedMap[K]) => BadgeSpec[];
   /** A 3px left edge color, e.g. caution for urgent reminders or tone for notes. */
   edge?: (s: GatedSignals, d: ParsedMap[K]) => string | null;
+  /** "Did you mean?" offers for values the parser won't set on its own (shown on committed cards). */
+  suggest?: (text: string) => Suggestion[];
   /** One line for the recent stack. */
   summary: (d: ParsedMap[K]) => string;
   Component: ComponentType<CardProps<ParsedMap[K]>>;

@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import type { CardIntent } from "@/lib/jev/types";
 import { formatAmount } from "@/lib/parse/common";
+import { suggestIssue } from "@/lib/parse/issue";
 import { UNIT_LABELS } from "@/lib/parse/convert";
 import { formatClock } from "@/lib/parse/timer";
 import { describeRandom } from "@/lib/parse/random";
@@ -258,6 +259,7 @@ export const registry: Registry = {
     example: "bug checkout broken on safari @riya p1 by friday",
     icon: CircleDot,
     signals: ["issueType", "urgency"],
+    suggest: suggestIssue,
     // issueType is null offline (always "unspecified") or when Jev is unsure: plain "Issue".
     headerIcon: (s) => (s.issueType && s.issueType !== "unspecified" ? ISSUE_ICON[s.issueType] : CircleDot),
     headerLabel: (s) => (s.issueType && s.issueType !== "unspecified" ? ISSUE_LABEL[s.issueType] : "Issue"),

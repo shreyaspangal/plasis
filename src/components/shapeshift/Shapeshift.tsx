@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { registry } from "@/components/intents/registry";
 import { useDemoScript } from "@/hooks/useDemoScript";
 import { useIntent } from "@/hooks/useIntent";
+import { useSuggestion } from "@/hooks/useSuggestion";
 import { activeIntent, type DecideMemory, decide, force, initialMemory, promote } from "@/lib/decide";
 import type { CardIntent, IntentResult } from "@/lib/jev/types";
 import { spring, tween } from "@/lib/motion";
@@ -22,6 +23,7 @@ import { IntentPalette } from "./IntentPalette";
 import { LatencyHud } from "./LatencyHud";
 import { MorphContainer } from "./MorphContainer";
 import { RecentStack } from "./RecentStack";
+import { SuggestionTip } from "./SuggestionTip";
 import { newId, type SavedItem, savedItems } from "@/lib/savedItems";
 import { notify } from "@/lib/notify";
 
@@ -100,6 +102,14 @@ export function Shapeshift() {
   const ui = mem.ui;
   const intent = activeIntent(ui);
   const ghost = ui.kind === "ghost";
+  // Only on committed cards, so Tab never also means "keep the ghost".
+  const { suggestion, accept: acceptSuggestion, deny: denySuggestion } = useSuggestion({
+    suggest: ui.kind === "committed" ? registry[ui.intent].suggest : undefined,
+    text,
+    draftId,
+    setText,
+    inputRef,
+  });
   const meta = useMemo(() => (intent ? derive(intent, text, gated) : null), [intent, text, gated]);
 
   // Readiness: Jev's continuous score when it agrees with the card, otherwise how filled-in the card is.
@@ -232,6 +242,10 @@ export function Shapeshift() {
       e.preventDefault();
       if (ui.kind === "choose") pick(ui.options[chip]);
       else complete();
+    } else if (suggestion && (e.key === "Tab" || e.key === "Escape")) {
+      e.preventDefault();
+      if (e.key === "Tab") acceptSuggestion();
+      else denySuggestion();
     } else if (e.key === "Escape") {
       e.preventDefault();
       reset();
@@ -297,6 +311,7 @@ export function Shapeshift() {
               className="relative z-[1] h-8 w-full bg-transparent pe-6 text-[22px] leading-8 font-[450] tracking-[-0.01em] text-foreground caret-brand outline-none"
             />
             {text === "" && <CyclingPlaceholder />}
+            {suggestion && <SuggestionTip inputRef={inputRef} text={text} suggestion={suggestion} onAccept={acceptSuggestion} onDeny={denySuggestion} />}
             <span
               aria-hidden
               className={cn(

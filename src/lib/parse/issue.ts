@@ -1,4 +1,4 @@
-import { capitalize, collapse, findDate, removeRange, tidy } from "./common";
+import { capitalize, collapse, findDate, removeRange, type Suggestion, tidy } from "./common";
 
 export type IssuePriority = "high" | "medium" | "low";
 
@@ -100,4 +100,30 @@ export function parseIssue(text: string, ref?: Date): IssueData {
 
 export function completeIssue(d: IssueData) {
   return (d.summary ? 0.5 : 0) + (d.assignee ? 0.25 : 0) + (d.due ? 0.15 : 0) + (d.priority ? 0.1 : 0);
+}
+
+const BARE_LEVEL = /(?<!\b(?:priority|prio)[\s:]*)\b(high|medium|low)\s*$/i;
+const ASSIGN_NAME = /\bassign(?:ed)?\s+(?:it\s+)?(?:to\s+)?(?<![@\w])([a-z][\w-]*)\b/i;
+/** "to" too: in "assign to @riya" the regex backtracks past the optional "to" and reads it as the name. */
+const NOT_A_NAME = /^(me|myself|him|her|them|someone|somebody|anyone|it|to|this|that|the|a|an)$/i;
+
+/**
+ * Values the parser won't set by itself but can offer, with exact positions in the raw
+ * text (not the collapsed copy parseIssue peels), so the input can highlight them.
+ */
+export function suggestIssue(text: string): Suggestion[] {
+  const out: Suggestion[] = [];
+  // A lone trailing "high" is too vague to set (see the Option A decision), but worth asking about.
+  const level = text.match(BARE_LEVEL);
+  if (level && !hasExplicitPriority(text)) {
+    const start = level.index!;
+    out.push({ id: `priority:${level[1].toLowerCase()}`, start, end: start + level[1].length, from: level[1], to: `${level[1]} priority` });
+  }
+  // "assign to riya" → "@riya", so it becomes the assignee.
+  const assign = text.match(ASSIGN_NAME);
+  if (assign && !NOT_A_NAME.test(assign[1])) {
+    const start = assign.index! + assign[0].length - assign[1].length;
+    out.push({ id: `assignee:${assign[1].toLowerCase()}`, start, end: start + assign[1].length, from: assign[1], to: `@${assign[1]}` });
+  }
+  return out.sort((a, b) => a.start - b.start);
 }
