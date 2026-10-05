@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { registry } from "@/components/intents/registry";
 import { useDemoScript } from "@/hooks/useDemoScript";
 import { useIntent } from "@/hooks/useIntent";
+import { usePair } from "@/hooks/usePair";
 import { useSuggestion } from "@/hooks/useSuggestion";
 import { activeIntent, type DecideMemory, decide, force, initialMemory, promote } from "@/lib/decide";
 import type { CardIntent, IntentResult } from "@/lib/jev/types";
@@ -73,6 +74,7 @@ export function Shapeshift() {
 
   const [text, setText] = useState("");
   const { result, resultText, status, hud } = useIntent(text);
+  const pair = usePair(text);
 
   const [mem, setMem] = useState<DecideMemory>(initialMemory);
   const [gated, setGated] = useState<GatedSignals>(neutralGated);
@@ -364,7 +366,7 @@ export function Shapeshift() {
 
       <IntentPalette open={paletteOpen} onOpenChange={setPaletteOpen} onPick={pick} />
       <LatencyHud {...hud} large={flags.demo} />
-      {flags.debug && <DebugPanel result={result} mem={mem} gated={gated} />}
+      {flags.debug && <DebugPanel result={result} mem={mem} gated={gated} pair={pair} />}
     </MotionConfig>
   );
 }

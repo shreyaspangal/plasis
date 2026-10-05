@@ -137,3 +137,13 @@ export function promote(mem: DecideMemory): DecideMemory {
 export function activeIntent(ui: UiState): CardIntent | null {
   return ui.kind === "committed" || ui.kind === "ghost" ? ui.intent : null;
 }
+
+/**
+ * Two cards from one line: each half's calm state shows a card (ghost or committed),
+ * and the two differ. The same card twice is one thing said twice ("flight … then train …").
+ */
+export function pairOf(first: UiState, second: UiState): [CardIntent, CardIntent] | null {
+  const a = activeIntent(first);
+  const b = activeIntent(second);
+  return a && b && a !== b ? [a, b] : null;
+}

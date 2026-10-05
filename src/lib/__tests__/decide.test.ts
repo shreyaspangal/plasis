@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { changedSubstantially, decide, force, initialMemory, promote, rawState, type DecideMemory } from "@/lib/decide";
+import { changedSubstantially, decide, force, initialMemory, pairOf, promote, rawState, type DecideMemory, type UiState } from "@/lib/decide";
+import type { CardIntent } from "@/lib/jev/types";
 import { result } from "./helpers";
 
 const run = (steps: [Parameters<typeof result>[0], string][], start: DecideMemory = initialMemory) => {
@@ -117,5 +118,26 @@ describe("forced intents", () => {
   test("promote turns ghost into committed", () => {
     const mem = decide(initialMemory, result({ todo: 0.5 }), "milk, eggs");
     expect(promote(mem).ui).toEqual({ kind: "committed", intent: "todo" });
+  });
+});
+
+describe("pairOf: two cards from one line", () => {
+  const ghost = (intent: CardIntent): UiState => ({ kind: "ghost", intent });
+  const committed = (intent: CardIntent): UiState => ({ kind: "committed", intent });
+
+  test("two different cards → a pair", () => {
+    expect(pairOf(committed("event"), committed("reminder"))).toEqual(["event", "reminder"]);
+  });
+  test("a ghost half still counts (F-032: 'coffee with riya at 4')", () => {
+    expect(pairOf(ghost("event"), committed("reminder"))).toEqual(["event", "reminder"]);
+  });
+  test("the same card twice → one card", () => {
+    expect(pairOf(committed("travel"), committed("travel"))).toBeNull();
+  });
+  test("a half with no card → one card", () => {
+    expect(pairOf(committed("reminder"), { kind: "input" })).toBeNull();
+  });
+  test("a half still choosing between two → one card", () => {
+    expect(pairOf({ kind: "choose", options: ["event", "reminder"] }, committed("note"))).toBeNull();
   });
 });

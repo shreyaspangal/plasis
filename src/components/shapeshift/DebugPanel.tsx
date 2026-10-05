@@ -1,5 +1,6 @@
 "use client";
 
+import type { PairCard } from "@/hooks/usePair";
 import type { DecideMemory } from "@/lib/decide";
 import type { Answer, IntentResult } from "@/lib/jev/types";
 import type { GatedSignals } from "@/lib/signals";
@@ -30,7 +31,17 @@ function Dist({ name, a }: { name: string; a: Answer<string> }) {
 }
 
 /** ?debug=1 — every answer, probability and confidence. */
-export function DebugPanel({ result, mem, gated }: { result: IntentResult; mem: DecideMemory; gated: GatedSignals }) {
+export function DebugPanel({
+  result,
+  mem,
+  gated,
+  pair,
+}: {
+  result: IntentResult;
+  mem: DecideMemory;
+  gated: GatedSignals;
+  pair: [PairCard, PairCard] | null;
+}) {
   const s = result.signals;
   return (
     <aside className="fixed start-4 top-4 z-40 hidden max-h-[calc(100vh-2rem)] w-72 flex-col gap-3 overflow-y-auto rounded-xl border bg-card p-3 font-mono text-[11px] leading-4 text-muted-foreground shadow-[var(--shadow-lift)] tabular-nums lg:flex">
@@ -40,6 +51,7 @@ export function DebugPanel({ result, mem, gated }: { result: IntentResult; mem: 
         {"options" in mem.ui ? ` → ${mem.ui.options.join(" / ")}` : ""}
         {mem.challenger ? ` · challenger ${mem.challenger.intent}×${mem.challenger.wins}` : ""}
       </div>
+      <div className="text-foreground">pair: {pair ? pair.map((c) => `${c.intent} "${c.text}"`).join(" + ") : "none"}</div>
       <div>
         readiness {result.readiness.toFixed(2)} · {result.source ?? "?"} · {result.model}
         {result.cached ? " · cached" : ""}
