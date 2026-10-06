@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { findClauses } from "@/lib/clauses";
+import { borrowDate, findClauses } from "@/lib/clauses";
 
 const cuts = (text: string, first: string, second: string) =>
   test(text, () => expect(findClauses(text)).toEqual({ first, second }));
@@ -32,4 +32,20 @@ describe("never cuts", () => {
   keeps("lunch at 5 p.m. with sam");
   keeps("meet dr. rao friday");
   keeps("save x.com/a;b for later"); // no space after ";"
+});
+
+describe("borrowDate: a reminder half with no date", () => {
+  const REF = new Date(2026, 9, 6, 10, 0);
+  test("borrows its sibling's date as a deadline", () => {
+    expect(borrowDate("remind me to book a table", "lunch with sam friday 1pm", REF)).toBe("remind me to book a table before friday 1pm");
+  });
+  test("drops a leading 'on'", () => {
+    expect(borrowDate("remind me to prep slides", "standup on monday at 10", REF)).toBe("remind me to prep slides before monday at 10");
+  });
+  test("keeps its own date", () => {
+    expect(borrowDate("remind me to call at 6", "lunch friday", REF)).toBe("remind me to call at 6");
+  });
+  test("nothing to borrow", () => {
+    expect(borrowDate("remind me to collect it", "split the uber 600", REF)).toBe("remind me to collect it");
+  });
 });

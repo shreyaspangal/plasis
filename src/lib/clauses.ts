@@ -1,3 +1,5 @@
+import { findDate } from "@/lib/parse/common";
+
 /**
  * Two requests in one line: "lunch friday 1pm and remind me to book a table".
  * Code only finds where a line *could* break; the classifier decides whether
@@ -30,4 +32,15 @@ export function findClauses(text: string): Clauses | null {
     if (first.length >= 2 && second.length >= 2) return { first, second };
   }
   return null;
+}
+
+/**
+ * The deadline a reminder half with no date could borrow from its sibling, in the user's own words:
+ * "lunch friday 1pm" + "remind me to book a table" → "remind me to book a table before friday 1pm".
+ * Only ever offered: the halves may be unrelated ("…and remind me to pay rent"), F-037.
+ */
+export function borrowDate(text: string, sibling: string, ref?: Date): string {
+  if (findDate(text, ref)) return text;
+  const date = findDate(sibling, ref);
+  return date ? `${text} before ${date.text.replace(/^on\s+/i, "")}` : text;
 }

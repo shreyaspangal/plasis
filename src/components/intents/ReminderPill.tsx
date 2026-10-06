@@ -16,6 +16,7 @@ export function ReminderPill({ data }: CardProps<ReminderData>) {
       )}
       {when ? (
         <Chip icon={Clock} className="shrink-0">
+          {data.isDeadline && "Before "}
           {when.time ? `${when.day}, ${when.time}` : when.day}
         </Chip>
       ) : (

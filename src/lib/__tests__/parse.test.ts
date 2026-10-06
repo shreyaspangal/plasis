@@ -75,6 +75,20 @@ describe("reminder", () => {
   test("don't forget", () => {
     expect(parseReminder("don't forget to email ravi", REF).task).toBe("Email ravi");
   });
+  test("'before <date>' is a deadline, and the word leaves the task (F-035)", () => {
+    const r = parseReminder("remind me to book a table before fri 1pm", REF);
+    expect(r.task).toBe("Book a table");
+    expect(r.isDeadline).toBe(true);
+    expect(r.hasTime).toBe(true);
+  });
+  test("'before' with no date stays in the task", () => {
+    const r = parseReminder("remind me to stretch before bed", REF);
+    expect(r.task).toBe("Stretch before bed");
+    expect(r.isDeadline).toBe(false);
+  });
+  test("a plain date is not a deadline", () => {
+    expect(parseReminder("remind me to call mom tomorrow", REF).isDeadline).toBe(false);
+  });
 });
 
 describe("todo", () => {

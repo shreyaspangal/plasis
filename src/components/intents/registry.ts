@@ -104,7 +104,7 @@ export const registry: Registry = {
     signals: ["urgency", "recurring"],
     badges: (s) => [...urgent(s), ...repeats(s)],
     edge: (s) => (s.urgent ? "var(--caution)" : null),
-    summary: (d) => [d.task || "Reminder", d.when && formatWhen(d.when, d.hasTime).day].filter(Boolean).join(" · "),
+    summary: (d) => [d.task || "Reminder", d.when && `${d.isDeadline ? "Before " : ""}${formatWhen(d.when, d.hasTime).day}`].filter(Boolean).join(" · "),
     Component: ReminderPill,
   },
   todo: {
