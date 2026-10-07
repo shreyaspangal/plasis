@@ -23,6 +23,7 @@ import { FirstRunHint } from "./FirstRunHint";
 import { IntentChips } from "./IntentChips";
 import { IntentPalette } from "./IntentPalette";
 import { LatencyHud } from "./LatencyHud";
+import { CardShimmer } from "./CardShimmer";
 import { MorphContainer } from "./MorphContainer";
 import { RecentStack } from "./RecentStack";
 import { SuggestionTip } from "./SuggestionTip";
@@ -77,7 +78,7 @@ export function Plasis() {
 
   const [text, setText] = useState("");
   const { result, resultText, status, hud } = useIntent(text);
-  const pair = usePair(text);
+  const { cards: pair, thinking: pairThinking } = usePair(text);
 
   const [mem, setMem] = useState<DecideMemory>(initialMemory);
   const [gated, setGated] = useState<GatedSignals>(neutralGated);
@@ -113,6 +114,20 @@ export function Plasis() {
   // Two cards from one line, unless a card was picked by hand (palette, chip) or a saved one is being edited.
   const cards = pair && editingId === null && !(ui.kind === "committed" && ui.forced) ? pair : null;
   const ghost = !cards && ui.kind === "ghost";
+  // Working on it: the whole line or either half of a pair is being classified.
+  const thinking = status === "thinking" || pairThinking;
+  // A shimmer card only while no card shows yet and the answer takes longer than 400 ms (fast answers never flash it).
+  const waiting = thinking && !intent && !cards && text.trim().length >= 2;
+  const [shimmerArmed, setShimmerArmed] = useState(false);
+  useEffect(() => {
+    if (!waiting) return;
+    const id = setTimeout(() => setShimmerArmed(true), 400);
+    return () => {
+      clearTimeout(id);
+      setShimmerArmed(false);
+    };
+  }, [waiting]);
+  const showShimmer = waiting && shimmerArmed;
   // The card with attachments keeps the draft id wherever it sits, so its files stay with it when the line
   // splits or joins again (F-038 B). The other card gets its own id.
   const idOf = (i: number) => ((cards && registry[cards[1].intent].attachments ? 1 : 0) === i ? draftId : pairId);
@@ -360,7 +375,7 @@ export function Plasis() {
               aria-hidden
               className={cn(
                 "absolute end-5 size-1.5 rounded-full bg-brand transition-opacity duration-300 ease-out",
-                status === "thinking" ? "opacity-60" : "opacity-0",
+                thinking ? "opacity-60" : "opacity-0",
               )}
             />
           </motion.div>
@@ -401,7 +416,7 @@ export function Plasis() {
                 </div>
               </motion.div>
             ) : (
-              intent && (
+              intent ? (
               <motion.div
                 key={`card-${draftId}`}
                 layoutId={reduce ? undefined : `item-${draftId}`}
@@ -418,7 +433,9 @@ export function Plasis() {
                   </DraftContext>
                 </GhostPreview>
               </motion.div>
-              )
+              ) : showShimmer ? (
+                <CardShimmer key="shimmer" />
+              ) : null
             )}
           </AnimatePresence>
         </MorphContainer>
