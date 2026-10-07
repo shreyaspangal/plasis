@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, MotionConfig, useReducedMotion, useSpring } from "motion/react";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { registry } from "@/components/intents/registry";
 import { useDemoScript } from "@/hooks/useDemoScript";
 import { useIntent } from "@/hooks/useIntent";
@@ -11,10 +11,11 @@ import { activeIntent, type DecideMemory, decide, force, initialMemory, promote 
 import type { CardIntent, IntentResult } from "@/lib/jev/types";
 import { spring, tween } from "@/lib/motion";
 import { parseFor, parsers } from "@/lib/parse";
+import { appendAt } from "@/lib/parse/common";
 import { type GatedSignals, gateSignals, neutralGated } from "@/lib/signals";
 import { cn } from "@/lib/utils";
 import { DraftContext, ItemIdContext } from "@/components/intents/shared";
-import { CardView } from "./CardView";
+import { CardFooter, CardView } from "./CardView";
 import { CyclingPlaceholder } from "./CyclingPlaceholder";
 import { DebugPanel } from "./DebugPanel";
 import { GhostPreview } from "./GhostPreview";
@@ -26,6 +27,7 @@ import { MorphContainer } from "./MorphContainer";
 import { RecentStack } from "./RecentStack";
 import { SuggestionTip } from "./SuggestionTip";
 import { newId, type SavedItem, savedItems } from "@/lib/savedItems";
+import { pairOffers } from "@/lib/suggestions";
 import { notify } from "@/lib/notify";
 
 const subscribeNoop = () => () => {};
@@ -61,6 +63,7 @@ function IntentCard<K extends CardIntent>(props: {
   ghost: boolean;
   editing: boolean;
   onConfirm: () => void;
+  hideFooter?: boolean;
 }) {
   const { intent, text, signals } = props;
   const data = useMemo(() => parseFor(intent, text, { colorMood: signals.colorMood }), [intent, text, signals.colorMood]);
@@ -89,6 +92,10 @@ export function Shapeshift() {
   const [draftId, setDraftId] = useState(newId);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
+  // The second card of a two-card line has its own id (its attachments, then its saved item).
+  const [pairId, setPairId] = useState(newId);
+  // Whether the "Did you mean?" tooltip is on screen: Tab/Esc act on the offer only then (F-039).
+  const [tipVisible, setTipVisible] = useState(false);
 
   // Fold each new result into the calm UI state (decide + signal gating).
   if (seen !== result) {
@@ -103,10 +110,15 @@ export function Shapeshift() {
 
   const ui = mem.ui;
   const intent = activeIntent(ui);
-  const ghost = ui.kind === "ghost";
+  // Two cards from one line, unless a card was picked by hand (palette, chip) or a saved one is being edited.
+  const cards = pair && editingId === null && !(ui.kind === "committed" && ui.forced) ? pair : null;
+  const ghost = !cards && ui.kind === "ghost";
+  // The card with attachments keeps the draft id wherever it sits, so its files stay with it when the line
+  // splits or joins again (F-038 B). The other card gets its own id.
+  const idOf = (i: number) => ((cards && registry[cards[1].intent].attachments ? 1 : 0) === i ? draftId : pairId);
   // Only on committed cards, so Tab never also means "keep the ghost".
   const { suggestion, accept: acceptSuggestion, deny: denySuggestion } = useSuggestion({
-    suggest: ui.kind === "committed" ? registry[ui.intent].suggest : undefined,
+    suggest: cards ? () => pairOffers(cards, (k) => registry[k].suggest) : ui.kind === "committed" ? registry[ui.intent].suggest : undefined,
     text,
     draftId,
     setText,
@@ -115,7 +127,10 @@ export function Shapeshift() {
   const meta = useMemo(() => (intent ? derive(intent, text, gated) : null), [intent, text, gated]);
 
   // Readiness: Jev's continuous score when it agrees with the card, otherwise how filled-in the card is.
-  const target = !intent
+  // Two cards: the shell is as ready as the less filled-in card.
+  const target = cards
+    ? Math.min(...cards.map((c) => derive(c.intent, c.text, c.signals).completeness))
+    : !intent
     ? 0
     : result.intent.value === intent && resultText === text && result.source === "jev"
       ? result.readiness / 2
@@ -127,7 +142,11 @@ export function Shapeshift() {
 
   // Announce commits (and completions) for screen readers.
   const committedIntent = ui.kind === "committed" ? ui.intent : null;
-  const liveMessage = committedIntent ? `Showing ${registry[committedIntent].label.toLowerCase()} card` : announcement;
+  const liveMessage = cards
+    ? `Showing ${registry[cards[0].intent].label.toLowerCase()} and ${registry[cards[1].intent].label.toLowerCase()} cards`
+    : committedIntent
+      ? `Showing ${registry[committedIntent].label.toLowerCase()} card`
+      : announcement;
 
   /** Clear the input. When editing a saved item, it returns to the list unchanged. */
   const reset = () => {
@@ -142,6 +161,22 @@ export function Shapeshift() {
   };
 
   const complete = (): boolean => {
+    // Two cards: save both, each with its own half as text (newest first, in reading order).
+    if (cards) {
+      const createdAt = Date.now();
+      const items = cards.map(
+        (c, i): SavedItem => ({ id: idOf(i), intent: c.intent, summary: derive(c.intent, c.text, c.signals).summary, text: c.text, createdAt }),
+      );
+      savedItems.update((list) => (flags.demo ? [...items, ...list].slice(0, 9) : [...items, ...list]));
+      setAnnouncement(`Added ${items.map((x) => `${registry[x.intent].label.toLowerCase()}: ${x.summary}`).join(" and ")}`);
+      requestAnimationFrame(() => inputRef.current?.focus());
+      setText("");
+      setMem(initialMemory);
+      setGated(neutralGated);
+      setDraftId(newId());
+      setPairId(newId());
+      return true;
+    }
     const target: CardIntent | null =
       ui.kind === "committed" || ui.kind === "ghost" ? ui.intent : ui.kind === "choose" ? ui.options[chip] : null;
     if (!target || !text.trim()) return false;
@@ -218,11 +253,8 @@ export function Shapeshift() {
   const draft = useMemo(
     () => ({
       append: (snippet: string) => {
-        setText((t) => {
-          const base = t.trimEnd();
-          // Keep a trailing question mark at the end: "pizza or burgers?" + " or " → "pizza or burgers or ?"
-          return base.endsWith("?") ? `${base.slice(0, -1).trimEnd()}${snippet}?` : `${base}${snippet}`;
-        });
+        // Keeps a trailing question mark at the end: "pizza or burgers?" + " or " → "pizza or burgers or ?"
+        setText((t) => appendAt(t, t.length, snippet).text);
         requestAnimationFrame(() => {
           const el = inputRef.current;
           if (!el) return;
@@ -235,6 +267,15 @@ export function Shapeshift() {
     [],
   );
 
+  // Writes a card's edit into the input and puts the caret right after it.
+  const typeInto = useCallback((next: { text: string; caret: number }) => {
+    setText(next.text);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.setSelectionRange(next.caret, next.caret);
+    });
+  }, []);
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const atEnd = e.currentTarget.selectionStart === text.length;
     if (e.key === "/" && text === "") {
@@ -242,9 +283,10 @@ export function Shapeshift() {
       setPaletteOpen(true);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (ui.kind === "choose") pick(ui.options[chip]);
+      // Two cards: Enter saves both, even if the whole line alone would ask "X or Y?".
+      if (ui.kind === "choose" && !cards) pick(ui.options[chip]);
       else complete();
-    } else if (suggestion && (e.key === "Tab" || e.key === "Escape")) {
+    } else if (suggestion && tipVisible && (e.key === "Tab" || e.key === "Escape")) {
       e.preventDefault();
       if (e.key === "Tab") acceptSuggestion();
       else denySuggestion();
@@ -254,7 +296,7 @@ export function Shapeshift() {
     } else if (e.key === "Tab" && ghost) {
       e.preventDefault();
       setMem(promote(mem));
-    } else if (ui.kind === "choose" && atEnd && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+    } else if (ui.kind === "choose" && !cards && atEnd && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
       e.preventDefault();
       setChip(e.key === "ArrowLeft" ? 0 : 1);
     }
@@ -290,7 +332,7 @@ export function Shapeshift() {
     <MotionConfig reducedMotion="user">
       <main id="main" className="mx-auto w-full max-w-[560px] px-4 pt-[14vh] pb-24 sm:px-0 sm:pt-[22vh]">
         <h1 className="sr-only">Shapeshift</h1>
-        <MorphContainer readiness={readiness} edge={ghost ? null : (meta?.edge ?? null)}>
+        <MorphContainer readiness={readiness} edge={ghost || cards ? null : (meta?.edge ?? null)}>
           <motion.div layout="position" className="relative flex h-[72px] items-center px-5">
             <input
               ref={inputRef}
@@ -313,7 +355,7 @@ export function Shapeshift() {
               className="relative z-[1] h-8 w-full bg-transparent pe-6 text-[22px] leading-8 font-[450] tracking-[-0.01em] text-foreground caret-brand outline-none"
             />
             {text === "" && <CyclingPlaceholder />}
-            {suggestion && <SuggestionTip inputRef={inputRef} text={text} suggestion={suggestion} onAccept={acceptSuggestion} onDeny={denySuggestion} />}
+            {suggestion && <SuggestionTip inputRef={inputRef} text={text} suggestion={suggestion} onAccept={acceptSuggestion} onDeny={denySuggestion} onVisibleChange={setTipVisible} />}
             <span
               aria-hidden
               className={cn(
@@ -324,7 +366,42 @@ export function Shapeshift() {
           </motion.div>
 
           <AnimatePresence initial={false} mode="popLayout">
-            {intent && (
+            {cards ? (
+              <motion.div
+                key={`pair-${draftId}`}
+                initial={reduce ? { opacity: 0 } : { opacity: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, transition: tween.exit }}
+                transition={reduce ? tween.fade : { ...spring.settle, delay: 0.04 }}
+              >
+                {cards.map((c, i) => (
+                  <div key={i} className={i ? "border-t border-dashed border-border" : undefined}>
+                    <GhostPreview ghost={c.ghost}>
+                      {/* Each card types into its own half: "+ Add item" on the first card lands before the join. */}
+                      <DraftContext value={{ append: (snippet) => typeInto(appendAt(text, c.at + c.text.length, snippet)) }}>
+                        <ItemIdContext value={idOf(i)}>
+                          <IntentCard
+                            intent={c.intent}
+                            text={c.text}
+                            signals={c.signals}
+                            readiness={readiness}
+                            ghost={false}
+                            editing={false}
+                            onConfirm={complete}
+                            hideFooter
+                          />
+                        </ItemIdContext>
+                      </DraftContext>
+                    </GhostPreview>
+                  </div>
+                ))}
+                {/* One footer for both, outside the ghost fade so "Add both" always works. */}
+                <div className="px-5 pb-5">
+                  <CardFooter readiness={readiness} keepAs={null} label="Add both" onConfirm={complete} />
+                </div>
+              </motion.div>
+            ) : (
+              intent && (
               <motion.div
                 key={`card-${draftId}`}
                 layoutId={reduce ? undefined : `item-${draftId}`}
@@ -341,14 +418,15 @@ export function Shapeshift() {
                   </DraftContext>
                 </GhostPreview>
               </motion.div>
+              )
             )}
           </AnimatePresence>
         </MorphContainer>
 
-        <FirstRunHint show={!intent && ui.kind !== "choose" && saved.length === 0 && !flags.demo} />
+        <FirstRunHint show={!intent && !cards && ui.kind !== "choose" && saved.length === 0 && !flags.demo} />
 
         <IntentChips
-          options={ui.kind === "choose" ? ui.options : null}
+          options={ui.kind === "choose" && !cards ? ui.options : null}
           probabilities={result.intent.probabilities}
           active={chip}
           onPick={pick}

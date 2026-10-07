@@ -8,7 +8,7 @@ import { parseColor } from "@/lib/parse/color";
 import { parseSplit } from "@/lib/parse/split";
 import { parseExpense } from "@/lib/parse/expense";
 import { parseIssue, suggestIssue } from "@/lib/parse/issue";
-import { applySuggestion } from "@/lib/parse/common";
+import { appendAt, applySuggestion } from "@/lib/parse/common";
 import { parseConvert } from "@/lib/parse/convert";
 import { evaluate, parseCalc } from "@/lib/parse/calc";
 import { parseTravel } from "@/lib/parse/travel";
@@ -462,4 +462,19 @@ describe("expense: billing words aren't part of the item (F-001)", () => {
     ["lunch with client 1200 reimbursable", "Lunch with client"],
     ["paid 300 for parking, billable to acme", "Parking"],
   ])("%s → %s", (text, item) => expect(parseExpense(text).item).toBe(item));
+});
+
+describe("appendAt: a card types into its own span of the line", () => {
+  test("at the end of the line, like the single card always did", () => {
+    expect(appendAt("meditate every morning", 22, " at 7am")).toEqual({ text: "meditate every morning at 7am", caret: 29 });
+  });
+  test("a trailing '?' stays last", () => {
+    expect(appendAt("pizza or burgers? ", 18, " or ")).toEqual({ text: "pizza or burgers or ?", caret: 20 });
+  });
+  test("a todo in the first half: the text lands before the join", () => {
+    expect(appendAt("buy milk; remind me to check it", 8, ", ")).toEqual({ text: "buy milk, ; remind me to check it", caret: 10 });
+  });
+  test("a poll in the first half keeps its '?'", () => {
+    expect(appendAt("pizza or burgers? and remind me to order", 17, " or ").text).toBe("pizza or burgers or ? and remind me to order");
+  });
 });

@@ -2,7 +2,7 @@
 
 import { Clock } from "lucide-react";
 import type { ReminderData } from "@/lib/parse/reminder";
-import { Chip, Field, formatWhen, Missing } from "./shared";
+import { Chip, Field, formatWhen, Missing, Placeholder } from "./shared";
 import type { CardProps } from "./types";
 
 export function ReminderPill({ data }: CardProps<ReminderData>) {
@@ -20,9 +20,12 @@ export function ReminderPill({ data }: CardProps<ReminderData>) {
           {when.time ? `${when.day}, ${when.time}` : when.day}
         </Chip>
       ) : (
-        <Chip icon={Clock} className="shrink-0 text-muted-foreground">
-          Anytime
-        </Chip>
+        <span className="flex shrink-0 items-center gap-1.5">
+          <Chip icon={Clock} className="text-muted-foreground">
+            Anytime
+          </Chip>
+          <Placeholder insert=" today">Today</Placeholder>
+        </span>
       )}
     </Field>
   );

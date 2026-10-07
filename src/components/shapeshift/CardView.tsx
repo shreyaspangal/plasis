@@ -29,19 +29,17 @@ type Props<K extends CardIntent> = {
   /** Reopened from the saved list: Enter saves, Esc cancels. */
   editing?: boolean;
   onConfirm: () => void;
+  /** Two cards from one line: the shell shows one shared footer instead. */
+  hideFooter?: boolean;
 };
 
-export function CardView<K extends CardIntent>({ intent, data, signals, readiness, ghost, editing, onConfirm }: Props<K>) {
+export function CardView<K extends CardIntent>({ intent, data, signals, readiness, ghost, editing, onConfirm, hideFooter }: Props<K>) {
   const def = registry[intent];
   const reduce = useReducedMotion();
   const Icon = def.headerIcon?.(signals, data) ?? def.icon;
   const label = def.headerLabel?.(signals, data) ?? def.label;
   const badges = def.badges?.(signals, data) ?? [];
   const Body = def.Component;
-
-  // Never fully invisible: it stays a visible, focusable control while it "fills in".
-  const btnOpacity = useTransform(readiness, [0.3, 0.9], [0.4, 1]);
-  const btnY = useTransform(readiness, [0.3, 0.9], [reduce ? 0 : 4, 0]);
 
   return (
     <div className="flex flex-col gap-4 px-5 pt-1 pb-5">
@@ -91,26 +89,57 @@ export function CardView<K extends CardIntent>({ intent, data, signals, readines
       </AnimatePresence>
       {!def.attachments && <HiddenAttachmentsNotice showsOn={ATTACHMENT_CARDS} />}
 
-      <motion.div layout="position" className="flex min-h-8 flex-wrap items-center justify-between gap-2">
-        {ghost ? (
-          <span className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
-            <Kbd>Tab</Kbd> to keep as {def.label.toLowerCase()}
-          </span>
-        ) : (
-          <>
-            <span className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
-              <Kbd>Esc</Kbd> {editing ? "to cancel" : "to clear"}
-            </span>
-            <motion.div style={{ opacity: btnOpacity, y: btnY }}>
-              <Button size="sm" onClick={onConfirm} className="gap-1.5 rounded-full pr-2 pl-3">
-                {editing ? "Save" : "Add"} {def.label.toLowerCase()}
-                <CornerDownLeft className="size-3.5 opacity-60" aria-hidden />
-              </Button>
-            </motion.div>
-          </>
-        )}
-      </motion.div>
+      {!hideFooter && (
+        <CardFooter
+          readiness={readiness}
+          keepAs={ghost ? def.label.toLowerCase() : null}
+          editing={editing}
+          label={`${editing ? "Save" : "Add"} ${def.label.toLowerCase()}`}
+          onConfirm={onConfirm}
+        />
+      )}
     </div>
+  );
+}
+
+/** "Esc to clear" and the save button; on a ghost, "Tab to keep as …" instead. Shared by one card and by a pair. */
+export function CardFooter({
+  readiness,
+  keepAs,
+  editing,
+  label,
+  onConfirm,
+}: {
+  readiness: MotionValue<number>;
+  keepAs: string | null;
+  editing?: boolean;
+  label: string;
+  onConfirm: () => void;
+}) {
+  const reduce = useReducedMotion();
+  // Never fully invisible: it stays a visible, focusable control while it "fills in".
+  const btnOpacity = useTransform(readiness, [0.3, 0.9], [0.4, 1]);
+  const btnY = useTransform(readiness, [0.3, 0.9], [reduce ? 0 : 4, 0]);
+  return (
+    <motion.div layout="position" className="flex min-h-8 flex-wrap items-center justify-between gap-2">
+      {keepAs ? (
+        <span className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+          <Kbd>Tab</Kbd> to keep as {keepAs}
+        </span>
+      ) : (
+        <>
+          <span className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+            <Kbd>Esc</Kbd> {editing ? "to cancel" : "to clear"}
+          </span>
+          <motion.div style={{ opacity: btnOpacity, y: btnY }}>
+            <Button size="sm" onClick={onConfirm} className="gap-1.5 rounded-full pr-2 pl-3">
+              {label}
+              <CornerDownLeft className="size-3.5 opacity-60" aria-hidden />
+            </Button>
+          </motion.div>
+        </>
+      )}
+    </motion.div>
   );
 }
 

@@ -2,7 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import { type RefObject, useLayoutEffect, useRef } from "react";
+import { type RefObject, useEffect, useLayoutEffect, useRef } from "react";
 import { Kbd } from "@/components/ui/kbd";
 import { tween } from "@/lib/motion";
 import type { Suggestion } from "@/lib/parse/common";
@@ -21,18 +21,22 @@ export function SuggestionTip({
   suggestion,
   onAccept,
   onDeny,
+  onVisibleChange,
 }: {
   inputRef: RefObject<HTMLInputElement | null>;
   text: string;
   suggestion: Suggestion;
   onAccept: () => void;
   onDeny: () => void;
+  /** Whether the tooltip is on screen; Tab/Esc act on the offer only then (F-039). */
+  onVisibleChange?: (visible: boolean) => void;
 }) {
   const reduce = useReducedMotion();
   const prefix = useRef<HTMLSpanElement>(null);
   const word = useRef<HTMLSpanElement>(null);
   const mark = useRef<HTMLDivElement>(null);
   const tip = useRef<HTMLDivElement>(null);
+  const shown = useRef<boolean | null>(null);
 
   useLayoutEffect(() => {
     const input = inputRef.current;
@@ -53,6 +57,10 @@ export function SuggestionTip({
       const tipLeft = Math.max(8, Math.min(left - 12, box.clientWidth - tip.current.offsetWidth - 8));
       Object.assign(tip.current.style, { left: `${tipLeft}px`, top: `${input.offsetTop + input.offsetHeight + 8}px` });
       mark.current.style.visibility = tip.current.style.visibility = visible ? "visible" : "hidden";
+      if (shown.current !== visible) {
+        shown.current = visible;
+        onVisibleChange?.(visible);
+      }
     };
     // The browser updates scrollLeft after key events, so measure on the next frame.
     let frame = 0;
@@ -71,7 +79,16 @@ export function SuggestionTip({
       document.removeEventListener("selectionchange", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [inputRef, text, suggestion]);
+  }, [inputRef, text, suggestion, onVisibleChange]);
+
+  // Gone means not visible; forget the last report so a remount reports again.
+  useEffect(
+    () => () => {
+      shown.current = null;
+      onVisibleChange?.(false);
+    },
+    [onVisibleChange],
+  );
 
   return (
     <>

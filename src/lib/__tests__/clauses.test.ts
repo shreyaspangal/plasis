@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { borrowDate, findClauses } from "@/lib/clauses";
 
 const cuts = (text: string, first: string, second: string) =>
-  test(text, () => expect(findClauses(text)).toEqual({ first, second }));
+  test(text, () => expect(findClauses(text)).toMatchObject({ first, second }));
 const keeps = (text: string) => test(text, () => expect(findClauses(text)).toBeNull());
 
 describe("cuts at a join", () => {
@@ -13,6 +13,15 @@ describe("cuts at a join", () => {
   cuts("lunch friday and don’t forget to book", "lunch friday", "don’t forget to book"); // curly apostrophe, F-033
   cuts("lunch friday and also book a table", "lunch friday", "book a table");
   cuts("buy milk; eggs; bread", "buy milk", "eggs; bread"); // only the first join cuts
+});
+
+test("each half knows where it starts in the line", () => {
+  expect(findClauses("lunch friday 1pm and remind me to book a table")).toEqual({
+    first: "lunch friday 1pm",
+    second: "remind me to book a table",
+    firstAt: 0,
+    secondAt: 21,
+  });
 });
 
 describe("cuts, but the classifier decides (Checkpoint 3)", () => {

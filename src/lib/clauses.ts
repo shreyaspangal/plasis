@@ -3,9 +3,10 @@ import { findDate } from "@/lib/parse/common";
 /**
  * Two requests in one line: "lunch friday 1pm and remind me to book a table".
  * Code only finds where a line *could* break; the classifier decides whether
- * both halves really are cards.
+ * both halves really are cards. `firstAt` / `secondAt` say where each half starts in the
+ * line, so a card can write into its own half.
  */
-export type Clauses = { first: string; second: string };
+export type Clauses = { first: string; second: string; firstAt: number; secondAt: number };
 
 const JOIN = new RegExp(
   [
@@ -27,9 +28,12 @@ export function findClauses(text: string): Clauses | null {
   for (const m of text.matchAll(JOIN)) {
     const before = text.slice(0, m.index);
     if (m[0].startsWith(".") && ABBREVIATION.test(before)) continue;
+    const after = text.slice(m.index + m[0].length);
     const first = before.trim();
-    const second = text.slice(m.index + m[0].length).trim();
-    if (first.length >= 2 && second.length >= 2) return { first, second };
+    const second = after.trim();
+    const firstAt = before.length - before.trimStart().length;
+    const secondAt = m.index + m[0].length + (after.length - after.trimStart().length);
+    if (first.length >= 2 && second.length >= 2) return { first, second, firstAt, secondAt };
   }
   return null;
 }

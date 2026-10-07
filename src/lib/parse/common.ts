@@ -114,3 +114,13 @@ export type Suggestion = { id: string; start: number; end: number; from: string;
 export function applySuggestion(text: string, s: Suggestion): string {
   return text.slice(0, s.start) + s.to + text.slice(s.end);
 }
+
+/**
+ * Type a snippet at the end of one span of the line, leaving the rest as is. A trailing "?"
+ * stays last: "pizza or burgers?" + " or " → "pizza or burgers or ?". `caret` lands after the snippet.
+ */
+export function appendAt(text: string, end: number, snippet: string): { text: string; caret: number } {
+  const head = text.slice(0, end).trimEnd();
+  const joined = head.endsWith("?") ? `${head.slice(0, -1).trimEnd()}${snippet}?` : `${head}${snippet}`;
+  return { text: joined + text.slice(end), caret: head.endsWith("?") ? joined.length - 1 : joined.length };
+}
