@@ -375,7 +375,7 @@ export function Plasis() {
                 transition={reduce ? tween.fade : { ...spring.settle, delay: 0.04 }}
               >
                 {cards.map((c, i) => (
-                  <div key={i} className={i ? "border-t border-dashed border-border" : undefined}>
+                  <div key={i} className={i ? "border-t border-dashed border-border pt-5" : undefined}>
                     <GhostPreview ghost={c.ghost}>
                       {/* Each card types into its own half: "+ Add item" on the first card lands before the join. */}
                       <DraftContext value={{ append: (snippet) => typeInto(appendAt(text, c.at + c.text.length, snippet)) }}>
