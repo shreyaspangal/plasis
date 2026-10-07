@@ -4,6 +4,10 @@
 
 **[Try it live →](https://plasis-steel.vercel.app)**
 
+<p align="center">
+  <img src="docs/demo.gif" alt="Typing into Plasis: an event card, an issue card with a &quot;Did you mean?&quot; fix, then one line that becomes an event and a reminder" width="820">
+</p>
+
 > Plasis is inspired from [Shapeshift](https://github.com/anishfn/shapeshift) by Anish (MIT), committed unchanged as the baseline `f592fe2`. Everything after that commit is my work, listed under [What I built](#what-i-built).
 
 ```
