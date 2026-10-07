@@ -2,7 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import { type RefObject, useEffect, useLayoutEffect, useRef } from "react";
+import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Kbd } from "@/components/ui/kbd";
 import { tween } from "@/lib/motion";
 import type { Suggestion } from "@/lib/parse/common";
@@ -10,8 +10,13 @@ import type { Suggestion } from "@/lib/parse/common";
 /** Same type settings as the main input, so the mirror measures exactly what's on screen. */
 const INPUT_TYPE = "text-[22px] leading-8 font-[450] tracking-[-0.01em] whitespace-pre";
 
+/** Time to move the mouse from the word into the tooltip before it closes. */
+const CLOSE_DELAY = 150;
+
 /**
- * Grammarly-style "Did you mean?": highlights the word inside the input and floats a tooltip under it.
+ * Grammarly-style "Did you mean?": underlines the word inside the input, and opens a tooltip only
+ * while the mouse is over the word (or the tooltip), or after a click or tap on the word, so it never
+ * covers the card on its own (F-020).
  * An <input> can't style part of its text, so an invisible mirror measures where the word sits,
  * and positions are written straight to the DOM on every scroll, keystroke and resize.
  */
@@ -28,7 +33,7 @@ export function SuggestionTip({
   suggestion: Suggestion;
   onAccept: () => void;
   onDeny: () => void;
-  /** Whether the tooltip is on screen; Tab/Esc act on the offer only then (F-039). */
+  /** Whether the tooltip is open and on screen; Tab/Esc act on the offer only then (F-039). */
   onVisibleChange?: (visible: boolean) => void;
 }) {
   const reduce = useReducedMotion();
@@ -37,6 +42,21 @@ export function SuggestionTip({
   const mark = useRef<HTMLDivElement>(null);
   const tip = useRef<HTMLDivElement>(null);
   const shown = useRef<boolean | null>(null);
+  const [open, setOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const show = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = null;
+    setOpen(true);
+  };
+  const hideSoon = () => {
+    if (closeTimer.current) return;
+    closeTimer.current = setTimeout(() => {
+      closeTimer.current = null;
+      setOpen(false);
+    }, CLOSE_DELAY);
+  };
 
   useLayoutEffect(() => {
     const input = inputRef.current;
@@ -48,19 +68,33 @@ export function SuggestionTip({
       const width = word.current.offsetWidth;
       // Hidden while the word is scrolled out of the visible part of the input.
       const visible = left + width > input.offsetLeft && left < input.offsetLeft + input.clientWidth;
+      // 2px past the word on each side, so the underline and shade don't hug the letters.
       Object.assign(mark.current.style, {
-        left: `${left}px`,
-        width: `${width}px`,
+        left: `${left - 2}px`,
+        width: `${width + 4}px`,
         top: `${input.offsetTop}px`,
         height: `${input.offsetHeight}px`,
       });
       const tipLeft = Math.max(8, Math.min(left - 12, box.clientWidth - tip.current.offsetWidth - 8));
       Object.assign(tip.current.style, { left: `${tipLeft}px`, top: `${input.offsetTop + input.offsetHeight + 8}px` });
-      mark.current.style.visibility = tip.current.style.visibility = visible ? "visible" : "hidden";
-      if (shown.current !== visible) {
-        shown.current = visible;
-        onVisibleChange?.(visible);
+      mark.current.style.visibility = visible ? "visible" : "hidden";
+      tip.current.style.visibility = visible && open ? "visible" : "hidden";
+      if (shown.current !== (visible && open)) {
+        shown.current = visible && open;
+        onVisibleChange?.(visible && open);
       }
+    };
+    // The input sits above the underline, so hovering the word is worked out from the mouse position.
+    const onWord = (e: MouseEvent) => {
+      const r = mark.current?.getBoundingClientRect();
+      return !!r && mark.current?.style.visibility !== "hidden" && e.clientX >= r.left && e.clientX <= r.right;
+    };
+    const onMove = (e: MouseEvent) => (onWord(e) ? show() : hideSoon());
+    // A click or tap on the word opens it too (touch screens have no hover); anywhere else closes it.
+    const onClick = (e: MouseEvent) => (onWord(e) ? show() : hideSoon());
+    // Typing closes it, except the keys that act on it.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" && e.key !== "Escape") hideSoon();
     };
     // The browser updates scrollLeft after key events, so measure on the next frame.
     let frame = 0;
@@ -71,19 +105,28 @@ export function SuggestionTip({
     place();
     const events = ["scroll", "keydown", "keyup", "click", "select"] as const;
     events.forEach((e) => input.addEventListener(e, schedule));
+    input.addEventListener("mousemove", onMove);
+    input.addEventListener("click", onClick);
+    input.addEventListener("keydown", onKey);
+    input.addEventListener("mouseleave", hideSoon);
     document.addEventListener("selectionchange", schedule);
     window.addEventListener("resize", schedule);
     return () => {
       cancelAnimationFrame(frame);
       events.forEach((e) => input.removeEventListener(e, schedule));
+      input.removeEventListener("mousemove", onMove);
+      input.removeEventListener("click", onClick);
+      input.removeEventListener("keydown", onKey);
+      input.removeEventListener("mouseleave", hideSoon);
       document.removeEventListener("selectionchange", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [inputRef, text, suggestion, onVisibleChange]);
+  });
 
   // Gone means not visible; forget the last report so a remount reports again.
   useEffect(
     () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
       shown.current = null;
       onVisibleChange?.(false);
     },
@@ -98,15 +141,20 @@ export function SuggestionTip({
         <span ref={word}>{text.slice(suggestion.start, suggestion.end)}</span>
       </span>
 
-      {/* Highlight behind the word (the input sits above it with a transparent background). */}
-      <div ref={mark} aria-hidden className="border-brand bg-brand/10 pointer-events-none absolute z-0 rounded-sm border-b-2" />
+      {/* Underline under the word, with a shade fading up from it that deepens while the tooltip is open
+          (the input sits above it with a transparent background). */}
+      <div ref={mark} aria-hidden className="border-brand pointer-events-none absolute z-0 border-b-2">
+        <div
+          className={`from-brand/30 size-full bg-linear-to-t to-transparent transition-opacity duration-150 ease-out ${open ? "opacity-100" : "opacity-35"}`}
+        />
+      </div>
 
-      <div ref={tip} className="absolute z-20">
+      <div ref={tip} onMouseEnter={show} onMouseLeave={hideSoon} className={`absolute z-20 ${open ? "" : "pointer-events-none"}`}>
         <motion.div
           role="dialog"
           aria-label="Did you mean?"
-          initial={reduce ? { opacity: 0 } : { opacity: 0, y: -4, filter: "blur(2px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          initial={false}
+          animate={open ? { opacity: 1, y: 0 } : { opacity: 0, y: reduce ? 0 : -4 }}
           transition={tween.fade}
           className="border-border bg-popover text-popover-foreground flex w-max max-w-[300px] flex-col gap-2 rounded-xl border p-3 shadow-[var(--shadow-float)]"
         >
