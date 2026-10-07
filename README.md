@@ -2,6 +2,8 @@
 
 **Type what you need. Get the UI.** One text box that turns what you type into the right card, with no type, mode or menu to pick first: an event, a reminder, a work item, a checklist, a bill split and more. Type two things in one line and you get two cards.
 
+**[Try it live →](https://plasis-steel.vercel.app)**
+
 > Plasis is inspired from [Shapeshift](https://github.com/anishfn/shapeshift) by Anish (MIT), committed unchanged as the baseline `f592fe2`. Everything after that commit is my work, listed under [What I built](#what-i-built).
 
 ```
