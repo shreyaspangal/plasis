@@ -2,7 +2,7 @@
 
 **Type what you need. Get the UI.** One text box that turns what you type into the right card, with no type, mode or menu to pick first: an event, a reminder, a work item, a checklist, a bill split and more. Type two things in one line and you get two cards.
 
-**[Try it live →](https://plasis-steel.vercel.app)**
+**[Try it live →](https://plasisui.vercel.app)**
 
 <p align="center">
   <img src="docs/demo.gif" alt="Typing into Plasis: an event card, an issue card with a &quot;Did you mean?&quot; fix, then one line that becomes an event and a reminder" width="820">
