@@ -102,7 +102,12 @@ function intentScores(raw: string): Scores {
   else if (listSeps === 1 && has(/^(buy|get|todo|to do|groceries)\b/, t)) add("todo", 3);
   if (has(/^(buy|get|pick up|grab)\b/, t)) add("todo", 2);
   const gather = has(GATHER, t);
-  if (has(DATE_WORDS, t)) add("event", gather || words.length <= 6 ? 2.5 : 1);
+  // A sentence describing a day ("weather today is warm", "traffic was bad today") is a note, not a plan (F-040).
+  // A time or a meeting word keeps it an event: "dinner is at 8pm friday".
+  const describesDay =
+    has(DATE_WORDS, t) && !gather && !has(/\b\d{1,2}(:\d{2})?\s?(am|pm)\b|\b\d{1,2}:\d{2}\b/, t) && has(/\b(is|was|were|are|feels?|felt|looks?|looked|seems?|seemed)\b/, t);
+  if (describesDay) add("note", 2.5);
+  else if (has(DATE_WORDS, t)) add("event", gather || words.length <= 6 ? 2.5 : 1);
   if (gather) add("event", 3);
   if (has(/\b(on|over|via) (zoom|meet|teams|facetime)\b/, t)) add("event", 2);
   // Issue: one piece of project work for a team. "@name" never matches an email (see parse/issue).

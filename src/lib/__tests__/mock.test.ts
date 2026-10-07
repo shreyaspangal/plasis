@@ -88,3 +88,13 @@ describe("mock classifier", () => {
   test("on zoom → video_call", () => expect(mockClassify("dinner with priya friday 8pm on zoom").signals.eventMode.value).toBe("video_call"));
   test("urgent → high urgency", () => expect(mockClassify("remind me to pay rent tomorrow urgent").signals.urgency.score).toBeGreaterThan(1.2));
 });
+
+describe("a remark about a day is a note, not an event (F-040)", () => {
+  for (const t of ["weather today is warm", "traffic was bad today"]) {
+    test(t, () => expect(rawState(mockClassify(t))).toEqual({ kind: "committed", intent: "note" }));
+  }
+  // A time or a meeting word keeps it a plan.
+  for (const t of ["dinner is at 8pm friday", "the meeting is tomorrow", "lunch today"]) {
+    test(t, () => expect(mockClassify(t).intent.value).toBe("event"));
+  }
+});
