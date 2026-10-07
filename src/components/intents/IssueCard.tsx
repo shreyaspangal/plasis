@@ -2,6 +2,7 @@
 
 import { CalendarDays, Flag, UserRound, Users } from "lucide-react";
 import type { IssueData, IssuePriority } from "@/lib/parse/issue";
+import { AttachChip } from "./Attachments";
 import { Chip, Field, formatWhen, Missing, Placeholder } from "./shared";
 import type { CardProps } from "./types";
 
@@ -38,6 +39,7 @@ export function IssueCard({ data, signals }: CardProps<IssueData>) {
         ) : (
           <Placeholder insert=" priority: ">Add priority</Placeholder>
         )}
+        <AttachChip />
       </Field>
 
       {data.collaborators.length > 0 && (

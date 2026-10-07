@@ -20,7 +20,18 @@ const placeholderClass =
  * with `insert` it types the connecting word into the input ("with", "at", ", "),
  * without it, it must sit inside a trigger (a popover button) that opens an editor.
  */
-export function Placeholder({ children, insert, className }: { children: ReactNode; insert?: string; className?: string }) {
+export function Placeholder({
+  children,
+  insert,
+  className,
+  icon: Icon = Plus,
+}: {
+  children: ReactNode;
+  insert?: string;
+  className?: string;
+  /** Defaults to "+"; a field with its own symbol (Attach → paperclip) can pass it. */
+  icon?: LucideIcon;
+}) {
   const draft = useContext(DraftContext);
   if (insert && draft) {
     return (
@@ -34,14 +45,14 @@ export function Placeholder({ children, insert, className }: { children: ReactNo
           className,
         )}
       >
-        <Plus className="size-3.5" aria-hidden />
+        <Icon className="size-3.5" aria-hidden />
         {children}
       </button>
     );
   }
   return (
     <span className={cn(placeholderClass, className)}>
-      <Plus className="size-3.5" aria-hidden />
+      <Icon className="size-3.5" aria-hidden />
       {children}
     </span>
   );
