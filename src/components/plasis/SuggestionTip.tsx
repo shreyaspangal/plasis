@@ -11,7 +11,7 @@ import type { Suggestion } from "@/lib/parse/common";
 const INPUT_TYPE = "text-[22px] leading-8 font-[450] tracking-[-0.01em] whitespace-pre";
 
 /** Time to move the mouse from the word into the tooltip before it closes. */
-const CLOSE_DELAY = 150;
+const CLOSE_DELAY = 400;
 
 /**
  * Grammarly-style "Did you mean?": underlines the word inside the input, and opens a tooltip only
