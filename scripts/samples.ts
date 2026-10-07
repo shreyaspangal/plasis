@@ -121,3 +121,34 @@ export const SAMPLES: Record<string, string[]> = {
     "tomorrow",
   ],
 };
+
+/**
+ * Two-intent lines (Phase 2, Checkpoint 6), with the outcome we want. Unlike SAMPLES, these carry
+ * labels: whether a line is one thing or two is a product decision, not the classifier's call.
+ */
+export const PAIR_SAMPLES: [text: string, expect: "two" | "one"][] = [
+  ["lunch with sam friday 1pm and remind me to book a table", "two"],
+  ["split the uber 600 and remind me to collect it", "two"],
+  ["coffee with riya at 4; remind me to bring the deck", "two"],
+  ["dinner with priya friday 8pm and remind me to pay rent", "two"],
+  ["standup monday 10am; bug login broken on safari @riya", "two"],
+  ["spent 450 on uber and remind me to file it", "two"],
+  ["flight to goa next weekend and also remind me to renew my passport", "two"],
+  ["25 min focus and then remind me to stretch", "two"],
+  ["bug checkout broken @riya p1; remind me to follow up friday", "two"],
+  ["buy milk, eggs and bread and also remind me to pay rent", "two"],
+  ["call with the vendor tomorrow 3pm. remind me to send the contract", "two"],
+  ["pizza or burgers for friday? and remind me to order", "two"],
+  ["meditate every morning; remind me to buy a mat", "two"],
+  ["dinner tomorrow 8pm and also split 1200 between 3", "two"],
+  ["lunch with sam and riya friday", "one"],
+  ["buy milk and eggs and bread", "one"],
+  ["split 900 between me and sam", "one"],
+  ["chekout broken on safari @sharon and fix it by tommorow", "one"],
+  ["idea: a todo app that guesses the type. maybe later", "one"],
+  ["remind me to call mom and then go to the gym", "one"],
+  ["flight to goa then train to pune", "one"],
+  ["remind me to call mom and also remind me to pay rent", "one"],
+  ["buy milk; eggs; bread", "one"],
+  ["meet dr. rao friday at 5 p.m. with sam", "one"],
+];
