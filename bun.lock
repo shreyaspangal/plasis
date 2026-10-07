@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "shapeshift",
+      "name": "plasis",
       "dependencies": {
         "@typesafe-ai/sdk": "^0.6.0",
         "chrono-node": "^2.10.1",

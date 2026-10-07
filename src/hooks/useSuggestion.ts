@@ -20,7 +20,7 @@ export function useSuggestion({
   inputRef: RefObject<HTMLInputElement | null>;
 }) {
   const [stored, setStored] = useState(() => noneDismissed(draftId));
-  // Forgotten during render (like Shapeshift's result fold), so a stale "no" never shows for a frame.
+  // Forgotten during render (like the shell's result fold), so a stale "no" never shows for a frame.
   const dismissed = liveDismissed(stored, text, draftId);
   if (dismissed !== stored) setStored(dismissed);
   const suggestion = suggest ? pickSuggestion(suggest(text), dismissed) : null;

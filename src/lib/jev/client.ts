@@ -46,7 +46,7 @@ export function classifierMode(): { mode: "online" | "offline"; reason: string }
 export function warnMockOnce(reason: string) {
   if (warned) return;
   warned = true;
-  console.info(`[shapeshift] Offline classifier (jev-offline): ${reason}. Add a TypeSafe key to .env.local to go online.`);
+  console.info(`[plasis] Offline classifier (jev-offline): ${reason}. Add a TypeSafe key to .env.local to go online.`);
 }
 
 function getClient() {

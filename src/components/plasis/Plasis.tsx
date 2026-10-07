@@ -70,7 +70,7 @@ function IntentCard<K extends CardIntent>(props: {
   return <CardView {...props} data={data} />;
 }
 
-export function Shapeshift() {
+export function Plasis() {
   const flags = useSearchFlags();
   const reduce = useReducedMotion();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -331,7 +331,7 @@ export function Shapeshift() {
   return (
     <MotionConfig reducedMotion="user">
       <main id="main" className="mx-auto w-full max-w-[560px] px-4 pt-[14vh] pb-24 sm:px-0 sm:pt-[22vh]">
-        <h1 className="sr-only">Shapeshift</h1>
+        <h1 className="sr-only">Plasis</h1>
         <MorphContainer readiness={readiness} edge={ghost || cards ? null : (meta?.edge ?? null)}>
           <motion.div layout="position" className="relative flex h-[72px] items-center px-5">
             <input
@@ -347,7 +347,7 @@ export function Shapeshift() {
               }}
               onKeyDown={onKeyDown}
               aria-label="Type anything"
-              aria-describedby="shapeshift-hint"
+              aria-describedby="plasis-hint"
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
@@ -434,7 +434,7 @@ export function Shapeshift() {
 
         <RecentStack items={saved.filter((x) => x.id !== editingId)} flyingId={flyingId} onOpen={reopen} onDelete={remove} />
 
-        <p id="shapeshift-hint" className="sr-only">
+        <p id="plasis-hint" className="sr-only">
           Type anything. Enter adds the card, Escape clears, Tab keeps a preview, slash opens every card type.
         </p>
         <div role="status" aria-live="polite" className="sr-only">

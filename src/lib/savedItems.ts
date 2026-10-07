@@ -11,7 +11,7 @@ export const savedItemSchema = z.object({
 });
 export type SavedItem = z.infer<typeof savedItemSchema>;
 
-const KEY = "shapeshift:saved:v1";
+const KEY = "plasis:saved:v1";
 const EMPTY: SavedItem[] = [];
 let items: SavedItem[] | null = null;
 /** Demo mode records into memory only, so it never touches the user's saved list. */

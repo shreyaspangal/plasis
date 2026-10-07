@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Shapeshift: a text box morphing into an event card as you type";
+export const alt = "Plasis: a text box turning into an event card as you type";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -43,7 +43,7 @@ export default function OpengraphImage() {
             ))}
           </div>
         </div>
-        <div style={{ fontSize: 30, color: muted, display: "flex" }}>Shapeshift: an input that becomes what you mean</div>
+        <div style={{ fontSize: 30, color: muted, display: "flex" }}>Plasis: type what you need. Get the UI.</div>
       </div>
     ),
     size,

@@ -1,6 +1,6 @@
 import { Star } from "lucide-react";
 
-const REPO = "anishfn/shapeshift";
+const REPO = "shreyaspangal/plasis";
 
 // Star count refreshes hourly; a failed fetch just hides the number.
 async function getStars(): Promise<number | null> {
@@ -35,7 +35,7 @@ export async function SiteChrome() {
         href={`https://github.com/${REPO}`}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={stars === null ? "Shapeshift on GitHub" : `Shapeshift on GitHub, ${stars} stars`}
+        aria-label={stars === null ? "Plasis on GitHub" : `Plasis on GitHub, ${stars} stars`}
         className="fixed end-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] z-30 inline-flex h-8 items-center gap-1.5 rounded-md border bg-background px-2.5 text-[13px] font-medium text-muted-foreground shadow-xs transition-[color,background-color,scale] duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-[0.96]"
       >
         <GithubMark className="size-4" />
@@ -49,12 +49,12 @@ export async function SiteChrome() {
         )}
       </a>
       <a
-        href="https://x.com/anishfn"
+        href="https://github.com/shreyaspangal"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed start-[max(1rem,env(safe-area-inset-left))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 font-mono text-[12px] leading-4 text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
-        made by <span className="underline decoration-border underline-offset-2">anishfn</span>
+        made by <span className="underline decoration-border underline-offset-2">shreyaspangal</span>
       </a>
     </>
   );

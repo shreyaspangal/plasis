@@ -8,20 +8,20 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Shapeshift — an input that becomes what you mean",
+  title: "Plasis — type what you need, get the UI",
   description:
-    "One text box that morphs into the right UI as you type: events, checklists, timers, colors, bill splits and more. Powered by TypeSafe AI's Jev.",
+    "One text box that turns what you type into the right card, with no mode to pick: events, reminders, issues, checklists, bill splits and more. Powered by TypeSafe AI's Jev.",
   // Absolute URLs for the Open Graph image: explicit site URL, else Vercel's production domain.
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ??
       (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000"),
   ),
   openGraph: {
-    title: "Shapeshift",
-    description: "An input that becomes what you mean.",
+    title: "Plasis",
+    description: "Type what you need. Get the UI.",
     type: "website",
   },
-  twitter: { card: "summary_large_image", title: "Shapeshift", description: "An input that becomes what you mean." },
+  twitter: { card: "summary_large_image", title: "Plasis", description: "Type what you need. Get the UI." },
 };
 
 // viewport-fit=cover lets fixed chrome (HUD, toasts) pad itself away from the home indicator.

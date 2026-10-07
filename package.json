@@ -1,5 +1,5 @@
 {
-  "name": "shapeshift",
+  "name": "plasis",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -57,6 +57,6 @@
     "sharp",
     "unrs-resolver"
   ],
-  "description": "An input that becomes what you mean: one text box that morphs into the right UI as you type.",
+  "description": "Type what you need. Get the UI: one text box that turns what you type into the right card, with no mode to pick.",
   "license": "MIT"
 }

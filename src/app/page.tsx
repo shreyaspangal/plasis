@@ -1,10 +1,10 @@
-import { Shapeshift } from "@/components/shapeshift/Shapeshift";
-import { SiteChrome } from "@/components/shapeshift/SiteChrome";
+import { Plasis } from "@/components/plasis/Plasis";
+import { SiteChrome } from "@/components/plasis/SiteChrome";
 
 export default function Home() {
   return (
     <>
-      <Shapeshift />
+      <Plasis />
       <SiteChrome />
     </>
   );

@@ -60,7 +60,7 @@ export function formatBytes(n: number) {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const DB = "shapeshift";
+const DB = "plasis";
 const STORE = "attachments";
 let dbPromise: Promise<IDBDatabase> | null = null;
 const listeners = new Set<() => void>();
